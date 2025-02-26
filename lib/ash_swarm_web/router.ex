@@ -1,6 +1,8 @@
 defmodule AshSwarmWeb.Router do
   use AshSwarmWeb, :router
 
+  import Oban.Web.Router
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -27,6 +29,8 @@ defmodule AshSwarmWeb.Router do
 
   scope "/", AshSwarmWeb do
     pipe_through :browser
+
+    oban_dashboard("/oban")
 
     get "/", PageController, :home
   end

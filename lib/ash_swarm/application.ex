@@ -8,13 +8,13 @@ defmodule AshSwarm.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      AshSwarmWeb.Telemetry,
+      AshSwarm.Repo,
       {Oban,
        AshOban.config(
          Application.fetch_env!(:ash_swarm, :ash_domains),
          Application.fetch_env!(:ash_swarm, Oban)
        )},
-      AshSwarmWeb.Telemetry,
-      AshSwarm.Repo,
       {DNSCluster, query: Application.get_env(:ash_swarm, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: AshSwarm.PubSub},
       # Start the Finch HTTP client for sending emails

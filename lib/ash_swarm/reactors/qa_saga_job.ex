@@ -21,8 +21,7 @@ defmodule AshSwarm.Reactors.QASagaJob do
     # Transform result to something JSON-encodable (like a string)
     encoded_result = encode_result(result)
 
-    job
-    |> update_job_meta(%{"result" => encoded_result})
+    update_job_meta(job, %{"result" => encoded_result})
 
     :ok
   end

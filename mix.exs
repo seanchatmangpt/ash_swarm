@@ -73,7 +73,8 @@ defmodule AshSwarm.MixProject do
       {:yaml_elixir, "~> 2.9"},
       {:ymlr, "~> 5.1"},
       {:toml, "~> 0.7"},
-      {:instructor, "~> 0.1.0"}
+      {:instructor, "~> 0.1.0"},
+      {:oban_web, "~> 2.11"}
     ]
   end
 

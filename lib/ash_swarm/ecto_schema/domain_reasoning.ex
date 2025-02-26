@@ -118,7 +118,7 @@ defmodule AshSwarm.EctoSchema.DomainReasoning do
     domain_reasoning
     |> cast(params, [:final_answer])
     |> cast_embed(:resources, with: &AshSwarm.EctoSchema.DomainResource.changeset/2)
-    |> cast_embed(:steps, with: &AshSwarm.EctoSchema.Step.changeset/2)
+    |> cast_embed(:steps, with: &AshSwarm.EctoSchema.DomainStep.changeset/2)
     |> validate_required([:resources, :steps, :final_answer])
   end
 end
