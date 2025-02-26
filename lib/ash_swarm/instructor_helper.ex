@@ -20,7 +20,11 @@ defmodule AshSwarm.InstructorHelper do
     - `{:ok, result}` on success.
     - `{:error, reason}` on failure.
   """
-  def gen(response_model, sys_msg, user_msg, model \\ "llama-3.1-8b-instant") do
+  def gen(response_model, sys_msg, user_msg, model \\ nil) do
+    # HACK: This is a temporary solution. The model should be properly configurable.
+    default_model = "llama-3.1-8b-instant"
+    model = model || System.get_env("ASH_SWARM_DEFAULT_MODEL", default_model)
+
     params = [
       mode: :tools,
       model: model,

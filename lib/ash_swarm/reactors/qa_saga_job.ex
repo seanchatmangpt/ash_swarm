@@ -8,7 +8,7 @@ defmodule AshSwarm.Reactors.QASagaJob do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"question" => question}} = job) do
     result =
-      case Reactor.run(AshSwarm.Reactors.QASaga, question: question) do
+      case Reactor.run(AshSwarm.Reactors.QASaga, %{question: question}) do
         {:ok, answer} ->
           Logger.info("QASaga completed successfully: #{answer}")
           answer
@@ -16,6 +16,10 @@ defmodule AshSwarm.Reactors.QASagaJob do
         {:error, error} ->
           Logger.error("QASaga encountered an error: #{inspect(error)}")
           error
+
+        {:halted, reactor} ->
+          Logger.debug("QASaga halted")
+          reactor
       end
 
     # Transform result to something JSON-encodable (like a string)

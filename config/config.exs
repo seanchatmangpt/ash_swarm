@@ -25,15 +25,11 @@ config :ash_swarm, Oban,
   queues: [default: 10]
 
 config :instructor,
-  api_url: "https://api.groq.com/openai",
-  api_key: System.get_env("GROQ_API_KEY")
+  adapter: Instructor.Adapters.Groq
 
 config :instructor, :groq,
-  api_url: "https://api.groq.com/openai",
-  api_key: System.get_env("GROQ_API_KEY"),
-  http_options: [receive_timeout: 60_000]
-
-Application.put_env(:instructor, :adapter, Instructor.Adapters.Groq)
+  api_url: System.get_env("GROQ_API_URL", "https://api.groq.com/openai"),
+  api_key: System.get_env("GROQ_API_KEY", "")
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
