@@ -29,6 +29,6 @@ defmodule AshSwarmTest.DomainReasoningYAMLTest do
     assert modified_loaded.final_answer == "Modified final answer for testing."
 
     # Clean up the modified file
-    # File.rm(@modified)
+    File.rm(@modified)
   end
 end

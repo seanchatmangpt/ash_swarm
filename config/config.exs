@@ -13,6 +13,28 @@ config :ash_swarm, Oban,
   queues: [default: 10],
   repo: AshSwarm.Repo
 
+config :ash_swarm, Oban,
+  repo: AshSwarm.Repo,
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"* * * * *", AshSwarm.Reactors.QASagaJob,
+        [args: %{question: "How can we create AGI with a LLM?"}]}
+     ]}
+  ],
+  queues: [default: 10]
+
+config :instructor,
+  api_url: "https://api.groq.com/openai",
+  api_key: System.get_env("GROQ_API_KEY")
+
+config :instructor, :groq,
+  api_url: "https://api.groq.com/openai",
+  api_key: System.get_env("GROQ_API_KEY"),
+  http_options: [receive_timeout: 60_000]
+
+Application.put_env(:instructor, :adapter, Instructor.Adapters.Groq)
+
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
   types: %{"application/vnd.api+json" => ["json"]}
@@ -66,7 +88,7 @@ config :spark,
 config :ash_swarm,
   ecto_repos: [AshSwarm.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [AshSwarm.Ontology]
+  ash_domains: [AshSwarm.Reactors, AshSwarm.Ontology]
 
 # Configures the endpoint
 config :ash_swarm, AshSwarmWeb.Endpoint,

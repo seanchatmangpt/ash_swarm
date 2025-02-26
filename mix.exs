@@ -72,7 +72,8 @@ defmodule AshSwarm.MixProject do
       {:bandit, "~> 1.5"},
       {:yaml_elixir, "~> 2.9"},
       {:ymlr, "~> 5.1"},
-      {:toml, "~> 0.7"}
+      {:toml, "~> 0.7"},
+      {:instructor, "~> 0.1.0"}
     ]
   end
 
