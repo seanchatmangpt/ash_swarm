@@ -1,0 +1,1413 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# InstructorEx Ash Resource
+
+```elixir
+Mix.install(
+  [
+  {:instructor, github: "thmsmlr/instructor_ex", branch: "main"},
+  {:ash, "~> 3.0"}
+  ],
+  config: [
+    instructor: [
+      api_url: "https://api.groq.com/openai",
+      api_key: System.get_env("LB_GROQ_API_KEY"), # Replace with your actual API key
+    ]
+  ], 
+  consolidate_protocols: false
+)
+
+Application.put_env(:ash, :validate_domain_resource_inclusion?, false)
+Application.put_env(:ash, :validate_domain_config_inclusion?, false)
+
+# Configure the Groq adapter explicitly as the default adapter
+Application.put_env(:instructor, :adapter, Instructor.Adapters.Groq)
+
+# Add the Groq adapter-specific configuration
+Application.put_env(:instructor, :groq, [
+  api_url: "https://api.groq.com/openai",
+  api_key: System.get_env("LB_GROQ_API_KEY"), # Replace with your actual API key
+  http_options: [receive_timeout: 60_000]
+])
+```
+
+## Introduction
+
+Instructor is a library to do structured prompting with OpenAI and open source LLMs. While the idea is pretty simple, through this and the other examples you'll realize how powerful a concept this is.
+
+**So first off, what is structure prompting?**
+
+What if the LLM returned data conforming to a complicated nested schema that your code knows how to work with? Well, that's structure prompting. It's a way of cohercing the LLM to producing it's response in a known format that your downstream code can handle. In the case of Instructor, we use Ecto to provide those schemas. Good old Ecto, something you're already familiar with.
+
+So, without further ado, let's take define a schema and take it for a spin!
+
+```elixir
+defmodule Politician do
+  use Ecto.Schema
+  use Instructor
+
+  @llm_doc """
+  A description of United States Politicians and the offices that they held,
+
+  ## Fields:
+  - first_name: Their first name
+  - last_name: Their last name
+  - offices_held:
+    - office: The branch and position in government they served in
+    - from_date: When they entered office or null
+    - until_date: The date they left office or null
+  """
+  @primary_key false
+  embedded_schema do
+    field(:first_name, :string)
+    field(:last_name, :string)
+
+    embeds_many :offices_held, Office, primary_key: false do
+      field(:office, Ecto.Enum,
+        values: [:president, :vice_president, :governor, :congress, :senate]
+      )
+
+      field(:from_date, :date)
+      field(:to_date, :date)
+    end
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Politician, <<70, 79, 82, 49, 0, 0, 19, ...>>, :ok}
+```
+
+Great, we have our schema describing politicans and the offices they held. Let's notice a few things that may stand out from regular Ecto usage. First, since there is no database backing the schema, it doesn't make sense to give it a primary_key. This also makes sense because there is no sensible value for the LLM to respond with.
+
+Also we use a `@doc` on the schema. This isn't just for documentation purposes of the tutorial. Instructor will take any `@doc` tag and provide it to the LLM. Generally you'll want to use this to provide semantic descriptions of the fields and general context to the LLM to ensure you get the outputs you want. In our case we want to push the LLM to understand that we are only considering American politicians.
+
+So, let's try asking the LLM to give us some politicians.
+
+```elixir
+Instructor.chat_completion(
+  model: "llama-3.1-8b-instant",
+  response_model: Politician,
+  messages: [
+    %{
+      role: "user",
+      content:
+        "Who won the American 2000 election and what offices have they held over their career?"
+    }
+  ]
+)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok,
+ %Politician{
+   first_name: "George",
+   last_name: "W. Bush",
+   offices_held: [
+     %Politician.Office{office: :president, from_date: ~D[2001-01-20], to_date: ~D[2009-01-20]},
+     %Politician.Office{office: :governor, from_date: ~D[1995-01-17], to_date: ~D[2000-12-21]},
+     %Politician.Office{office: :congress, from_date: ~D[1971-01-03], to_date: ~D[1972-01-03]},
+     %Politician.Office{office: :senate, from_date: ~D[1987-01-03], to_date: ~D[1993-01-03]},
+     %Politician.Office{office: :senate, from_date: ~D[1967-01-03], to_date: ~D[1968-01-03]}
+   ]
+ }}
+```
+
+Amazing, right? Using nothing more than one of the top libraries in Elixir, Ecto, we were able to get structured output from our LLM. The data returned is ready to be processed by our regular Elixir code. Instructor supports all field types that you can express in Ecto, including embedded and associated schemas.
+
+It's almost as if the LLM inputted the data into a Phoenix Form. All the utilities that you use to process that kind of data, you can use to process the outputs of Instructor.
+
+One of the superpowers of this is that since we're just using changesets under the hood, you can use the same validations that you would use elsewhere in your app. Let's look at that in the next section.
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Validations
+
+Instructor provides a lightweight behavior where you can define a callback function that we will call to validate the data returned by the LLM using Ecto changesets. There is nothing fancy to this API. It's just a changeset in and a changeset out.
+
+```elixir
+defmodule NumberSeries do
+  use Ecto.Schema
+  use Instructor
+
+  @primary_key false
+  embedded_schema do
+    field(:series, {:array, :integer})
+  end
+
+  @impl true
+  def validate_changeset(changeset) do
+    changeset
+    |> Ecto.Changeset.validate_length(:series, min: 10)
+    |> Ecto.Changeset.validate_change(:series, fn
+      field, values ->
+        if Enum.sum(values) |> rem(2) == 0 do
+          []
+        else
+          [{field, "The sum of the series must be even"}]
+        end
+    end)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, NumberSeries, <<70, 79, 82, 49, 0, 0, 18, ...>>, {:validate_changeset, 1}}
+```
+
+In this albeit contrived example, we're going to get the LLM to return a series of numbers and validate whether it has at least 10 numbers and that the sum of the series is even.
+
+When we ask for fewer than ten numbers, Instructor will return an error tuple with a change set that is invalid.
+
+```elixir
+{:error, changeset} =
+  Instructor.chat_completion(
+  model: "llama-3.1-8b-instant",
+    response_model: NumberSeries,
+    messages: [
+      %{role: "user", content: "Give me the first 5 integers"}
+    ]
+  )
+
+# Render our the errors down to strings.
+errors =
+  Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+    Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+      opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+    end)
+  end)
+
+{changeset.changes, errors}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+13:10:53.040 [warning]   Using Ecto Schemas without `use Instructor` is deprecated.
+
+  Please change your schema to include `use Instructor` and use the `@llm_doc` attribute to
+  define your schema documentation you'd like to send to the LLM.
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{%{series: [1, 2, 3, 4, 5]},
+ %{series: ["The sum of the series must be even", "should have at least 10 item(s)"]}}
+```
+
+Now the beauty of this is that since we have human readable errors from our validations, we can just turn around and pass those back into the LLM to get it to fix its own errors.
+
+Instructor provides a convenience parameter, `max_retries` for you in the initial call which will retry against the validations up to n times.
+
+```elixir
+Instructor.chat_completion(
+  model: "llama-3.1-8b-instant",
+  response_model: NumberSeries,
+  max_retries: 10,
+  messages: [
+    %{role: "user", content: "Give some random integers"}
+  ]
+)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+13:11:10.259 [debug] Retrying LLM call for NumberSeries:
+
+ "series - The sum of the series must be even\nseries - should have at least 10 item(s)"
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok, %NumberSeries{series: [4, 2, 6, 6, 14, 62, 9, 9, 26, 44, 98]}}
+```
+
+Here we demonstrated using regular Lixar code to validate the outputs of an LLM, but we don't have to stop there. We can actually use the LLM to validate the outputs of the LLM.
+
+In Instructor, we have provided a custom Ecto Changset validator called `validate_with_llm`. 
+Under the hood it just uses an instructor itself to check whether the field matches some condition that you have defined in plain text.
+
+```elixir
+defmodule QuestionAnswer do
+  use Ecto.Schema
+  use Instructor
+
+  @primary_key false
+  embedded_schema do
+    field(:question, :string)
+    field(:answer, :string)
+  end
+
+  @impl true
+  def validate_changeset(changeset) do
+    changeset
+    |> validate_with_llm(:answer, "Do not say anything objectionable")
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, QuestionAnswer, <<70, 79, 82, 49, 0, 0, 17, ...>>, {:validate_changeset, 1}}
+```
+
+```elixir
+%QuestionAnswer{}
+|> Instructor.cast_all(%{
+  question: "What is the meaning of life?",
+  answer: "Sex, drugs, and rock'n roll"
+})
+|> QuestionAnswer.validate_changeset()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+13:11:28.770 [warning]   Using Ecto Schemas without `use Instructor` is deprecated.
+
+  Please change your schema to include `use Instructor` and use the `@llm_doc` attribute to
+  define your schema documentation you'd like to send to the LLM.
+```
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Record Streaming
+
+Now if you've used chatGPT's web interface, you know that these LLMs can stream responses one token at a time. You can imagine that this is pretty easy to implement in code as you just reduce across the stream accumulating the value and appending to the log. But doing this when you're using OpenAI's function calls, and where the data is structured in JSON, it's not trivial to implement streaming.
+
+Luckily we've done that work for you and we support two types of streaming in Instructor. The first is **record streaming** and the second is **partial streaming**.
+
+First let's take a look at record streaming.
+
+Record streaming is useful when you're asking the LLM for something that is naturally represented as an array of records. In this mode, we will instead of returning the full array, we'll return a stream that will emit each record once it's been completely streamed to the client, but before the next records tokens have arrived.
+
+For example, let's take our presidents example from earlier, and we can instead ask for the first 5 presidents of the United States streaming each result as they come in.
+
+```elixir
+presidents_stream =
+  Instructor.chat_completion(
+  model: "llama-3.1-8b-instant",
+    stream: true,
+    response_model: {:array, Politician},
+    messages: [
+      %{role: "user", content: "Who are the first 5 presidents of the United States?"}
+    ]
+  )
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Stream<[
+  enum: #Function<62.38948127/2 in Stream.transform/3>,
+  funs: [#Function<50.38948127/1 in Stream.map/2>]
+]>
+```
+
+As you can see, instead of returning the result, we return a stream which can be run to emit each of the presidents.
+
+```elixir
+presidents_stream
+|> Stream.each(fn {:ok, politician} -> IO.inspect(politician) end)
+|> Stream.run()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%Politician{
+  first_name: "George",
+  last_name: "Washington",
+  offices_held: [
+    %Politician.Office{
+      office: :president,
+      from_date: ~D[1789-04-30],
+      to_date: ~D[1797-03-04]
+    }
+  ]
+}
+%Politician{
+  first_name: "John",
+  last_name: "Adams",
+  offices_held: [
+    %Politician.Office{
+      office: :president,
+      from_date: ~D[1797-03-04],
+      to_date: ~D[1801-03-04]
+    }
+  ]
+}
+%Politician{
+  first_name: "Thomas",
+  last_name: "Jefferson",
+  offices_held: [
+    %Politician.Office{
+      office: :president,
+      from_date: ~D[1801-03-04],
+      to_date: ~D[1809-03-04]
+    }
+  ]
+}
+%Politician{
+  first_name: "James",
+  last_name: "Madison",
+  offices_held: [
+    %Politician.Office{
+      office: :president,
+      from_date: ~D[1809-03-04],
+      to_date: ~D[1817-03-04]
+    }
+  ]
+}
+%Politician{
+  first_name: "James",
+  last_name: "Monroe",
+  offices_held: [
+    %Politician.Office{
+      office: :president,
+      from_date: ~D[1817-03-04],
+      to_date: ~D[1825-03-04]
+    }
+  ]
+}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+An important thing to note here is that we're running the validations independently for each value in the array.  That's why the values in the stream are either `{:ok, Ecto.Schema.t()}` or `{:error, Ecto.Changeset.t()}`.
+
+As a result, it's unclear how we can automatically do retries to fix validation errors. And therefore, when in streaming mode, it is the responsibility of the user to retry when validation errors occur. (We may revisit this decision in the future)
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Partial Streaming
+
+The other streaming mode that we have an instructor is called partial streaming. In this mode, you can get back a stream that will emit the record multiple times with the fields updating as they arrive. This can be used with a schema or an array of schemas. Both are demonstrated below.
+
+This is useful in UI applications where you want to show instant feedback to the user about what data is showing up when without giving just some indeterminant loading spinner.
+
+```elixir
+Instructor.chat_completion(
+  model: "llama-3.1-8b-instant",
+  stream: true,
+  response_model: {:partial, Politician},
+  messages: [
+    %{role: "user", content: "Who is the first president of the United States?"}
+  ]
+)
+|> Stream.each(fn
+  {:partial, politician} -> IO.puts("[Partial]: #{inspect(politician)}")
+  {:ok, politician} -> IO.puts("[Final]: #{inspect(politician)}")
+end)
+|> Stream.run()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[Partial]: %Politician{first_name: nil, last_name: nil, offices_held: []}
+[Partial]: %Politician{first_name: nil, last_name: nil, offices_held: []}
+[Partial]: %Politician{first_name: "George", last_name: nil, offices_held: []}
+[Partial]: %Politician{first_name: "George", last_name: "Washington", offices_held: []}
+[Partial]: %Politician{first_name: "George", last_name: "Washington", offices_held: []}
+[Partial]: %Politician{first_name: "George", last_name: "Washington", offices_held: [%Politician.Office{office: nil, from_date: nil, to_date: nil}]}
+[Partial]: %Politician{first_name: "George", last_name: "Washington", offices_held: [%Politician.Office{office: :president, from_date: nil, to_date: nil}]}
+[Partial]: %Politician{first_name: "George", last_name: "Washington", offices_held: [%Politician.Office{office: :president, from_date: ~D[1789-04-21], to_date: nil}]}
+[Partial]: %Politician{first_name: "George", last_name: "Washington", offices_held: [%Politician.Office{office: :president, from_date: ~D[1789-04-21], to_date: ~D[1797-03-04]}]}
+[Final]: %Politician{first_name: "George", last_name: "Washington", offices_held: [%Politician.Office{office: :president, from_date: ~D[1789-04-21], to_date: ~D[1797-03-04]}]}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+There is an important difference in this mode. Since your validations will be defined on the entirety of the object, it doesn't make sense to call the validate function until the entire record has been streamed in.
+
+Therefore, we introduce a new output tuple in the stream compared to regular record streaming. The value can be `{:partial, Ecto.Schema.t()}`, and then on the last emit of the stream it can be `{:error, Ecto.Changeset.t()}`, or `{:ok, Ecto.Schema.t()}`
+
+Like record streaming, however, using `max_retries` with this streaming mode does nothing and throws an error. (We may revisit this in the future when it's clear what such a behavior should do)
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Custom Ecto Types
+
+Instructor supports all the Ecto types out of the box, but sometimes you need more. And that's why Instructor provides a behavior that you can implement on your own custom Ecto types. All you have to do is implement `to_json_schema/0`.
+
+Whatever you return from this function will be put as the field type. See the [JSONSchema Specification](https://json-schema.org/understanding-json-schema/reference) for more information on what you can put here. Typically you'll see people put `description`, `type`, and maybe `format`.
+
+```elixir
+defmodule EctoURI do
+  use Ecto.Type
+  use Instructor.EctoType
+
+  def type, do: :map
+
+  # This is it, the rest is for implementing a regular old ecto type.
+  def to_json_schema() do
+    %{
+      type: "string",
+      description: "A valid URL"
+    }
+  end
+
+  def cast(uri) when is_binary(uri) do
+    {:ok, URI.parse(uri)}
+  end
+
+  def cast(%URI{} = uri), do: {:ok, uri}
+  def cast(_), do: :error
+
+  def load(data) when is_map(data) do
+    data =
+      for {key, val} <- data do
+        {String.to_existing_atom(key), val}
+      end
+
+    {:ok, struct!(URI, data)}
+  end
+
+  def dump(%URI{} = uri), do: {:ok, Map.from_struct(uri)}
+  def dump(_), do: :error
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, EctoURI, <<70, 79, 82, 49, 0, 0, 14, ...>>, {:dump, 1}}
+```
+
+```elixir
+Instructor.chat_completion(
+  model: "llama-3.1-8b-instant",
+  response_model: %{url: EctoURI},
+  messages: [
+    %{role: "user", content: "Give me the URL for Google"}
+  ]
+)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok,
+ %{
+   url: %URI{
+     scheme: "https",
+     authority: "www.google.com",
+     userinfo: nil,
+     host: "www.google.com",
+     port: 443,
+     path: nil,
+     query: nil,
+     fragment: nil
+   }
+ }}
+```
+
+And just like that, you can extend Instructor to get the LLM to return whatever you want.
+
+```elixir
+defmodule EctoAshAttribute do
+  use Ecto.Type
+  use Instructor.EctoType
+
+  def type, do: :map
+
+  # This is it, the rest is for implementing a regular old ecto type.
+  def to_json_schema() do
+    %{
+      type: "string",
+      description: "A valid Elixir Ash Attribute"
+    }
+  end
+
+  def cast(uri) when is_binary(uri) do
+    {:ok, URI.parse(uri)}
+  end
+
+  def cast(%URI{} = uri), do: {:ok, uri}
+  def cast(_), do: :error
+
+  def load(data) when is_map(data) do
+    data =
+      for {key, val} <- data do
+        {String.to_existing_atom(key), val}
+      end
+
+    {:ok, struct!(URI, data)}
+  end
+
+  def dump(%URI{} = uri), do: {:ok, Map.from_struct(uri)}
+  def dump(_), do: :error
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, EctoAshAttribute, <<70, 79, 82, 49, 0, 0, 14, ...>>, {:dump, 1}}
+```
+
+```elixir
+defmodule InstructorHelper do
+  @moduledoc """
+  A helper module for interacting with Instructor_ex.
+
+  Provides a function `gen/4` which wraps the call to Instructor.chat_completion.
+  """
+
+  @doc """
+  Generates a completion using Instructor.chat_completion.
+
+  ## Parameters
+
+    - `response_model`: The expected structure for the response (either a map or an Ecto embedded schema).
+    - `sys_msg`: The system message providing context to the language model.
+    - `user_msg`: The user prompt.
+    - `model`: (Optional) The model to use. Defaults to `"llama-3.1-8b-instant"`.
+
+  ## Returns
+
+    - `{:ok, result}` on success.
+    - `{:error, reason}` on failure.
+  """
+  def gen(response_model, sys_msg, user_msg, model \\ "llama-3.1-8b-instant") do
+    params = [
+      mode: :tools,
+      model: model,
+      messages: [
+        %{role: "system", content: sys_msg},
+        %{role: "user", content: user_msg}
+      ],
+      response_model: response_model
+    ]
+
+    Instructor.chat_completion(params)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, InstructorHelper, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:gen, 4}}
+```
+
+```elixir
+import InstructorHelper
+
+schema = %{response: :string}  # or a custom Ecto schema module
+sys_msg = "You are a helpful assistant."
+user_msg = "Say 'Hello, World!' in a creative way."
+
+case gen(schema, sys_msg, user_msg) do
+  {:ok, result} -> IO.inspect(result, label: "LLM Response")
+  {:error, reason} -> IO.inspect(reason, label: "Error")
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+LLM Response: %{response: "A message from Mars, echoing across the cosmos!"}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{response: "A message from Mars, echoing across the cosmos!"}
+```
+
+```elixir
+gen(%{ash_attribute: AshAttribute}, 
+  "You are a Elixir Ash attribute assistant", 
+  "Attribute for name that is private in json",
+"llama-3.3-70b-versatile")
+```
+
+```elixir
+defmodule AshOption.Attribute do
+  @llm_doc """
+  Represents an individual attribute definition for an Ash resource.
+
+  ## Fields
+
+    - `name`: The attribute name (e.g. `"subject"`).
+    - `type`: The attribute type (e.g. `"string"`).
+    - `modifiers`: A list of modifiers such as `"required"`, `"public"`, or `"sensitive"`.
+  """
+  use Ecto.Schema
+    use Instructor
+
+
+  @primary_key false
+  embedded_schema do
+    field :name, :string
+    field :type, :string
+    field :modifiers, {:array, :string}, default: []
+  end
+end
+
+defmodule AshOption.Relationship do
+  @llm_doc """
+  Represents a relationship definition for an Ash resource.
+
+  ## Fields
+
+    - `type`: The relationship type (e.g. `"belongs_to"`).
+    - `name`: The relationship name (e.g. `"representative"`).
+    - `destination`: The destination module (e.g. `"Helpdesk.Support.Representative"`).
+    - `modifiers`: A list of modifiers such as `"required"` or `"public"`.
+  """
+  use Ecto.Schema
+    use Instructor
+
+
+  @primary_key false
+  embedded_schema do
+    field :type, :string
+    field :name, :string
+    field :destination, :string
+    field :modifiers, {:array, :string}, default: []
+  end
+end
+
+defmodule AshOptions do
+  @llm_doc """
+  Represents the complete set of options for generating an Ash resource via `ash.gen.resource`.
+
+  ## Fields
+
+    - `full_module_name`: The full module name of the resource to be generated.
+    - `default_actions`: A list of default actions to add (e.g. `["read", "create", "update"]`).
+    - `uuid_primary_key`: The name of the UUID primary key field (if any).
+    - `uuid_v7_primary_key`: The name of the UUIDv7 primary key field (if any).
+    - `integer_primary_key`: The name of the integer primary key field (if any).
+    - `domain`: The domain module where the resource should be added.
+    - `base`: The base module to use for the resource (e.g. `"Ash.Resource"`).
+    - `timestamps`: A boolean flag indicating whether to add timestamps.
+    - `attributes`: A list of attribute definitions.
+    - `relationships`: A list of relationship definitions.
+    - `extend`: A list of extensions (as strings) to add to the resource.
+  """
+  use Ecto.Schema
+  use Instructor
+
+  @primary_key false
+  embedded_schema do
+    field :full_module_name, :string
+    field :default_actions, {:array, :string}, default: []
+    field :uuid_primary_key, :string
+    field :uuid_v7_primary_key, :string
+    field :integer_primary_key, :string
+    field :domain, :string
+    field :base, :string, default: "Ash.Resource"
+    field :timestamps, :boolean, default: false
+
+    # These fields can be represented as CSV strings from the LLM and then cast into arrays,
+    # or you can instruct the LLM to output them as JSON arrays.
+    embeds_many :attributes, AshOption.Attribute, on_replace: :delete
+    embeds_many :relationships, AshOption.Relationship, on_replace: :delete
+    field :extend, {:array, :string}, default: []
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, AshOptions, <<70, 79, 82, 49, 0, 0, 21, ...>>, :ok}
+```
+
+```elixir
+sys_msg = """
+You are a Ash 3.0 CLI argument and options generator
+
+    @example
+    mix ash.gen.resource Helpdesk.Support.Ticket 
+      --default-actions read 
+      --uuid-primary-key id 
+      --attribute subject:string:required:public 
+      --relationship belongs_to:representative:Helpdesk.Support.Representative
+      --timestamps
+      --extend postgres,graphql
+    
+    @moduledoc 
+    Generate and configure an Ash.Resource.
+
+    If the domain does not exist, we create it. If it does, we add the resource to it if it is not already present.
+
+    ## Example
+
+    ## Options
+
+    * `--attribute` or `-a` - An attribute or comma separated list of attributes to add, as `name:type`. Modifiers: `primary_key`, `public`, `sensitive`, and `required`. i.e `-a name:string:required`
+    * `--relationship` or `-r` - A relationship or comma separated list of relationships to add, as `type:name:dest`. Modifiers: `public`. `belongs_to` only modifiers: `primary_key`, `sensitive`, and `required`. i.e `-r belongs_to:author:MyApp.Accounts.Author:required`
+    * `--default-actions` - A csv list of default action types to add. The `create` and `update` actions accept the public attributes being added.
+    * `--uuid-primary-key` or `-u` - Adds a UUIDv4 primary key with that name. i.e `-u id`
+    * `--uuid-v7-primary-key` - Adds a UUIDv7 primary key with that name.
+    * `--integer-primary-key` or `-i` - Adds an integer primary key with that name. i.e `-i id`
+    * `--domain` or `-d` - The domain module to add the resource to. i.e `-d MyApp.MyDomain`. This defaults to the resource's module name, minus the last segment.
+    * `--extend` or `-e` - A comma separated list of modules or builtins to extend the resource with. i.e `-e postgres,Some.Extension`
+    * `--base` or `-b` - The base module to use for the resource. i.e `-b Ash.Resource`. Requires that the module is in `config :your_app, :base_resources`
+    * `--timestamps` or `-t` - If set adds `inserted_at` and `updated_at` timestamps to the resource.
+    
+"""
+
+user_msg = """
+resource: Glass.Support.Representative
+it is going to need to be a relationship with the Glass.Support.Ticket resource
+"""
+
+gen(AshOptions, sys_msg, user_msg)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok,
+ %AshOptions{
+   full_module_name: nil,
+   default_actions: [],
+   uuid_primary_key: nil,
+   uuid_v7_primary_key: nil,
+   integer_primary_key: nil,
+   domain: nil,
+   base: "Ash.Resource",
+   timestamps: false,
+   attributes: [],
+   relationships: [
+     %AshOption.Relationship{
+       type: "belongs_to",
+       name: "representative",
+       destination: "Glass.Support.Ticket",
+       modifiers: ["public"]
+     }
+   ],
+   extend: []
+ }}
+```
+
+```elixir
+defmodule AshOptionsCLI do
+  @moduledoc """
+  Converts an AshOptions struct into a Mix CLI command for `ash.gen.resource`
+  and prints it.
+  """
+
+  @doc """
+  Converts the given `AshOptions` struct into a CLI command string.
+  """
+  def to_cli_command(%AshOptions{} = opts) do
+    # Start with the base command and resource module
+    cmd = ["mix", "ash.gen.resource", opts.resource]
+
+    # Append options only if they are provided
+    cmd =
+      cmd ++
+        if opts.default_actions && opts.default_actions != [] do
+          ["--default-actions", Enum.join(opts.default_actions, ",")]
+        else
+          []
+        end
+
+    cmd =
+      cmd ++
+        if opts.uuid_primary_key && opts.uuid_primary_key != "" do
+          ["--uuid-primary-key", opts.uuid_primary_key]
+        else
+          []
+        end
+
+    cmd =
+      cmd ++
+        if opts.uuid_v7_primary_key && opts.uuid_v7_primary_key != "" do
+          ["--uuid-v7-primary-key", opts.uuid_v7_primary_key]
+        else
+          []
+        end
+
+    cmd =
+      cmd ++
+        if opts.integer_primary_key && opts.integer_primary_key != "" do
+          ["--integer-primary-key", opts.integer_primary_key]
+        else
+          []
+        end
+
+    cmd =
+      cmd ++
+        if opts.domain && opts.domain != "" do
+          ["--domain", opts.domain]
+        else
+          []
+        end
+
+    cmd =
+      cmd ++
+        if opts.base && opts.base != "" and opts.base != "Ash.Resource" do
+          ["--base", opts.base]
+        else
+          []
+        end
+
+    cmd =
+      cmd ++
+        if opts.timestamps do
+          ["--timestamps"]
+        else
+          []
+        end
+
+    # Process attributes: each attribute becomes "name:type:modifier:modifier..."
+    attr_strs =
+      Enum.map(opts.attributes, fn attr ->
+        base = "#{attr.name}:#{attr.type}"
+
+        if attr.modifiers && length(attr.modifiers) > 0 do
+          base <> ":" <> Enum.join(attr.modifiers, ":")
+        else
+          base
+        end
+      end)
+
+    cmd =
+      cmd ++
+        if attr_strs != [] do
+          ["--attribute", Enum.join(attr_strs, ",")]
+        else
+          []
+        end
+
+    # Process relationships: each relationship becomes "type:name:destination:modifier:..."
+    rel_strs =
+      Enum.map(opts.relationships, fn rel ->
+        base = "#{rel.type}:#{rel.name}:#{rel.destination}"
+
+        if rel.modifiers && length(rel.modifiers) > 0 do
+          base <> ":" <> Enum.join(rel.modifiers, ":")
+        else
+          base
+        end
+      end)
+
+    cmd =
+      cmd ++
+        if rel_strs != [] do
+          ["--relationship", Enum.join(rel_strs, ",")]
+        else
+          []
+        end
+
+    # Process extend: join the list with commas
+    cmd =
+      cmd ++
+        if opts.extend && opts.extend != [] do
+          ["--extend", Enum.join(opts.extend, ",")]
+        else
+          []
+        end
+
+    # Join the parts with a space to produce the final command string
+    Enum.join(cmd, " ")
+  end
+
+  @doc """
+  Prints the CLI command for the given AshOptions.
+  """
+  def print_cli_command(%AshOptions{} = opts) do
+    command = to_cli_command(opts)
+    IO.puts(command)
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+warning: unknown key .resource in expression:
+
+    opts.resource
+
+where "opts" was given the type:
+
+    # type: dynamic(%AshOptions{
+      attributes: term(),
+      base: term(),
+      default_actions: term(),
+      domain: term(),
+      extend: term(),
+      full_module_name: term(),
+      integer_primary_key: term(),
+      relationships: term(),
+      timestamps: term(),
+      uuid_primary_key: term(),
+      uuid_v7_primary_key: term()
+    })
+    # from: dev/livebooks/instructor_ex-quickstart.livemd#cell:y72urbyxcsy7q2fl:10
+    %AshOptions{} = opts
+
+└─ dev/livebooks/instructor_ex-quickstart.livemd#cell:y72urbyxcsy7q2fl:12: AshOptionsCLI.to_cli_command/1
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, AshOptionsCLI, <<70, 79, 82, 49, 0, 0, 33, ...>>, {:print_cli_command, 1}}
+```
+
+```elixir
+# Suppose this is the struct returned by your LLM:
+ash_opts = %AshOptions{
+  resource: "Helpdesk.Support.Ticket",
+  default_actions: ["read", "create", "update"],
+  uuid_primary_key: "id",
+  domain: "Helpdesk.Support",
+  base: "Ash.Resource",
+  timestamps: true,
+  attributes: [
+    %AshOption.Attribute{
+      name: "subject",
+      type: "string",
+      modifiers: ["required", "public"]
+    }
+  ],
+  relationships: [
+    %AshOption.Relationship{
+      type: "belongs_to",
+      name: "representative",
+      destination: "Helpdesk.Support.Representative",
+      modifiers: ["required"]
+    }
+  ],
+  extend: ["postgres", "graphql"]
+}
+
+AshOptionsCLI.print_cli_command(ash_opts)
+
+```
+
+```elixir
+Mix.Task.run("ash.gen.resource", [
+  "Helpdesk.Support.Ticket",
+  "--default-actions", "read",
+  "--uuid-primary-key", "id",
+  "--attribute", "subject:string:required:public",
+  "--relationship", "belongs_to:representative:Helpdesk.Support.Representative",
+  "--timestamps",
+  "--extend", "postgres,graphql"
+])
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+The task 'ash.gen.resource' requires igniter to be run.
+
+Please install igniter and try again.
+
+For more information, see: https://hexdocs.pm/igniter
+```
+
+```elixir
+
+defmodule DomainReasoning do
+  @moduledoc """
+  Represents the overall domain reasoning process.
+
+  This schema aggregates:
+  
+    - A list of domain resources (defined in `DomainResource`).
+    - A step-by-step explanation of the reasoning process.
+    - A final answer (or conclusion) derived from the reasoning.
+  """
+  use Ecto.Schema
+  import Ecto.Changeset
+  use Instructor
+
+
+  @primary_key false
+  embedded_schema do
+    embeds_many :resources, DomainResource, on_replace: :delete
+    embeds_many :steps, Step, on_replace: :delete
+    field :final_answer, :string
+  end
+
+  @llm_doc """
+  Builds a changeset for the DomainReasoning struct.
+
+  ## Parameters
+
+    - `domain_reasoning`: The DomainReasoning struct.
+    - `params`: A map of parameters to cast and validate.
+
+  ## Fields
+
+    - `resources`: A list of domain resources.
+    - `steps`: A list of reasoning steps. Each step contains an explanation and an output.
+    - `final_answer`: The final conclusion reached by the reasoning process.
+  """
+  def changeset(domain_reasoning, params) do
+    domain_reasoning
+    |> cast(params, [:final_answer])
+    |> cast_embed(:resources, with: &DomainResource.changeset/2)
+    |> cast_embed(:steps, with: &Step.changeset/2)
+    |> validate_required([:resources, :steps, :final_answer])
+  end
+end
+  # Nested module for a single reasoning step.
+defmodule Step do
+  @moduledoc """
+  Represents a single step in the reasoning process.
+
+  Each step contains:
+    - `explanation`: A textual explanation of the reasoning at that step.
+    - `output`: The result or outcome of that step.
+  """
+  use Ecto.Schema
+  import Ecto.Changeset
+  use Instructor
+
+
+  @primary_key false
+  embedded_schema do
+    field :explanation, :string
+    field :output, :string
+  end
+
+  @doc """
+  Builds a changeset for a single reasoning step.
+  """
+  def changeset(step, params) do
+    step
+    |> cast(params, [:explanation, :output])
+    |> validate_required([:explanation, :output])
+  end
+end
+
+defmodule DomainResource do
+
+  use Ecto.Schema
+  import Ecto.Changeset
+  use Instructor
+
+  @primary_key false
+  embedded_schema do
+    field :name, :string
+    field :attributes, {:array, :map}, default: []
+    field :relationships, {:array, :map}, default: []
+    field :default_actions, {:array, :string}, default: []
+    field :primary_key, :map
+    field :domain, :string
+    field :extends, {:array, :string}, default: []
+    field :base, :string
+    field :timestamps, :boolean, default: false
+  end
+
+  @llm_doc """
+  Represents a single resource within the domain.
+
+  Each resource contains:
+  
+    - `name`: A unique identifier for the resource.
+    - `attributes`: A list of maps defining its attributes.
+    - `relationships`: A list of maps defining its relationships to other resources.
+    - `default_actions`: A list of default action types (e.g. ["read", "create"]).
+    - `primary_key`: A map with primary key configuration (e.g. `%{type: "uuidv4", name: "id"}`).
+    - `domain`: A string indicating the domain to which the resource belongs.
+    - `extends`: A list of extensions to augment the resource.
+    - `base`: The base module to use for the resource.
+    - `timestamps`: A boolean flag indicating whether timestamps are included.
+  """
+  def changeset(resource, params) do
+    resource
+    |> cast(
+      params,
+      [
+        :name,
+        :attributes,
+        :relationships,
+        :default_actions,
+        :primary_key,
+        :domain,
+        :extends,
+        :base,
+        :timestamps
+      ]
+    )
+    |> validate_required([
+      :name,
+      :attributes,
+      :relationships,
+      :default_actions,
+      :primary_key,
+      :domain,
+      :extends,
+      :base,
+      :timestamps
+    ])
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, DomainResource, <<70, 79, 82, 49, 0, 0, 24, ...>>, {:changeset, 2}}
+```
+
+```elixir
+sys_msg = """
+You are a domain reasoning engine designed to help structure and define resources based on a user’s project needs.
+
+    @example
+    User: "I am working on a financial services project that is going to be using the FIBO ontology. So I'm gonna need resources to represent that."
+
+    Response:
+    {
+      "resources": [
+        {
+          "name": "FinancialInstrument",
+          "attributes": [
+            { "name": "name", "type": "string", "modifiers": ["required", "public"] },
+            { "name": "isin", "type": "string", "modifiers": ["required", "public"] },
+            { "name": "currency", "type": "string", "modifiers": ["required"] }
+          ],
+          "relationships": [
+            { "type": "belongs_to", "name": "issuer", "destination": "LegalEntity", "modifiers": ["required"] }
+          ],
+          "default_actions": ["read", "create"],
+          "primary_key": { "type": "uuidv4", "name": "id" },
+          "domain": "FinancialServices",
+          "extends": ["fibo-foundation"],
+          "base": "Ash.Resource",
+          "timestamps": true
+        },
+        {
+          "name": "LegalEntity",
+          "attributes": [
+            { "name": "name", "type": "string", "modifiers": ["required", "public"] },
+            { "name": "lei", "type": "string", "modifiers": ["required", "public"] }
+          ],
+          "relationships": [],
+          "default_actions": ["read", "create"],
+          "primary_key": { "type": "uuidv4", "name": "id" },
+          "domain": "FinancialServices",
+          "extends": ["fibo-foundation"],
+          "base": "Ash.Resource",
+          "timestamps": true
+        }
+      ],
+      "steps": [
+        {
+          "explanation": "Identified key entities from the FIBO ontology that are relevant to financial services.",
+          "output": "These entities are a good start FinancialInstrument and LegalEntity"
+        },
+        {
+          "explanation": "Defined core attributes based on FIBO standards, such as ISIN for financial instruments and LEI for legal entities.",
+          "output": "Attributes added to each resource."
+        },
+        {
+          "explanation": "Established key relationships, such as FinancialInstrument belonging to a LegalEntity as its issuer.",
+          "output": "Relationships configured."
+        }
+      ],
+      "final_answer": "The financial services domain is structured with foundational entities and relationships derived from FIBO."
+    }
+
+    @moduledoc 
+    Generate a structured domain representation based on the user’s project requirements.
+
+    ## Example
+
+    ## Inputs
+
+    - The user will describe their project, domain, or specific requirements.
+    - They might reference industry ontologies, compliance standards, or business needs.
+    - Your task is to infer key entities, attributes, relationships, and domain extensions.
+
+    ## Outputs
+
+    - A structured list of `resources`, each with:
+      - `name`: The name of the resource.
+      - `attributes`: A list of fields defining the resource.
+      - `relationships`: Connections to other resources.
+      - `default_actions`: Common operations supported by the resource.
+      - `primary_key`: The unique identifier for the resource.
+      - `domain`: The overarching module or namespace.
+      - `extends`: Optional modules that provide additional functionality.
+      - `base`: The fundamental Ash module being used.
+      - `timestamps`: Whether `inserted_at` and `updated_at` should be included.
+
+    - A reasoning breakdown (`steps`) explaining how the domain was structured.
+    - A `final_answer` summarizing the generated domain model.
+
+"""
+
+# user_msg = """
+# I am working on a financial services project that is going to be using the FIBO ontology. 
+# So I'm gonna need resources to represent that.
+# """
+
+user_msg = """
+I am working on a medical billing project so that I can make a lot of money from language models so create some resources that use the HCPCS ontology.
+
+3 Resources
+5 steps of reasoning
+"""
+
+gen(DomainReasoning, sys_msg, user_msg)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:error,
+ "LLM Adapter Error: \"Unexpected HTTP response code: 400\\n%{\\\"error\\\" => %{\\\"code\\\" => \\\"tool_use_failed\\\", \\\"failed_generation\\\" => \\\"{\\\\\\\"domain_reasoning\\\\\\\": {\\\\\\\"resources\\\\\\\": [{\\\\\\\"name\\\\\\\": \\\\\\\"Claim\\\\\\\", \\\\\\\"attributes\\\\\\\": [{\\\\\\\"name\\\\\\\": \\\\\\\"provider_id\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"integer\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"patient_id\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"integer\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"date_of_service\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"date\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"procedure_code\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"string\\\\\\\"}], \\\\\\\"relationships\\\\\\\": [{\\\\\\\"type\\\\\\\": \\\\\\\"belongs_to\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"provider\\\\\\\", \\\\\\\"destination\\\\\\\": \\\\\\\"Provider\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\"]}, {\\\\\\\"type\\\\\\\": \\\\\\\"belongs_to\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"patient\\\\\\\", \\\\\\\"destination\\\\\\\": \\\\\\\"Patient\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\"]}, {\\\\\\\"type\\\\\\\": \\\\\\\"belongs_to\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"invoice\\\\\\\", \\\\\\\"destination\\\\\\\": \\\\\\\"Invoice\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\"]}], \\\\\\\"default_actions\\\\\\\": [\\\\\\\"read\\\\\\\", \\\\\\\"create\\\\\\\"], \\\\\\\"primary_key\\\\\\\": {\\\\\\\"type\\\\\\\": \\\\\\\"uuidv4\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"id\\\\\\\"}, \\\\\\\"domain\\\\\\\": \\\\\\\"MedicalBilling\\\\\\\", \\\\\\\"extends\\\\\\\": [\\\\\\\"hcpcs-ontology\\\\\\\"], \\\\\\\"base\\\\\\\": \\\\\\\"Ash.Resource\\\\\\\", \\\\\\\"timestamps\\\\\\\": true}, {\\\\\\\"name\\\\\\\": \\\\\\\"Provider\\\\\\\", \\\\\\\"attributes\\\\\\\": [{\\\\\\\"name\\\\\\\": \\\\\\\"name\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"string\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\", \\\\\\\"public\\\\\\\"]}, {\\\\\\\"name\\\\\\\": \\\\\\\"nid\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"string\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\", \\\\\\\"public\\\\\\\"]}, {\\\\\\\"name\\\\\\\": \\\\\\\"address\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"string\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\"]}, {\\\\\\\"name\\\\\\\": \\\\\\\"phone\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"string\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\"]}], \\\\\\\"relationships\\\\\\\": [], \\\\\\\"default_actions\\\\\\\": [\\\\\\\"read\\\\\\\", \\\\\\\"create\\\\\\\"], \\\\\\\"primary_key\\\\\\\": {\\\\\\\"type\\\\\\\": \\\\\\\"uuidv4\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"id\\\\\\\"}, \\\\\\\"domain\\\\\\\": \\\\\\\"MedicalBilling\\\\\\\", \\\\\\\"extends\\\\\\\": [\\\\\\\"hcpcs-ontology\\\\\\\"], \\\\\\\"base\\\\\\\": \\\\\\\"Ash.Resource\\\\\\\", \\\\\\\"timestamps\\\\\\\": true}], {\\\\\\\"name\\\\\\\": \\\\\\\"Invoice\\\\\\\", \\\\\\\"attributes\\\\\\\": [{\\\\\\\"name\\\\\\\": \\\\\\\"date\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"date\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"total_amount\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"decimal\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"provider_id\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"integer\\\\\\\"}, {\\\\\\\"name\\\\\\\": \\\\\\\"status\\\\\\\", \\\\\\\"type\\\\\\\": \\\\\\\"string\\\\\\\"}], \\\\\\\"relationships\\\\\\\": [{\\\\\\\"type\\\\\\\": \\\\\\\"belongs_to\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"provider\\\\\\\", \\\\\\\"destination\\\\\\\": \\\\\\\"Provider\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"required\\\\\\\"]}, {\\\\\\\"type\\\\\\\": \\\\\\\"has_many\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"claims\\\\\\\", \\\\\\\"destination\\\\\\\": \\\\\\\"Claim\\\\\\\", \\\\\\\"modifiers\\\\\\\": [\\\\\\\"optional\\\\\\\"]}], \\\\\\\"default_actions\\\\\\\": [\\\\\\\"read\\\\\\\", \\\\\\\"create\\\\\\\"], \\\\\\\"primary_key\\\\\\\": {\\\\\\\"type\\\\\\\": \\\\\\\"uuidv4\\\\\\\", \\\\\\\"name\\\\\\\": \\\\\\\"id\\\\\\\"}, \\\\\\\"domain\\\\\\\": \\\\\\\"MedicalBilling\\\\\\\", \\\\\\\"extends\\\\\\\": [\\\\\\\"hcpcs-ontology\\\\\\\"], \\\\\\\"base\\\\\\\": \\\\\\\"Ash.Resource\\\\\\\", \\\\\\\"timestamps\\\\\\\": true}], \\\\\\\"steps\\\\\\\": [{\\\\\\\"explanation\\\\\\\": \\\\\\\"Inferred key entities from the HCPCS ontology related to medical billing.\\\\\\\", \\\\\\\"output\\\\\\\": \\\\\\\"Claim, Provider, and Invoice resources defined.\\\\\\\"}, {\\\\\\\"explanation\\\\\\\": \\\\\\\"Established core attributes based on HCPCS standards.\\\\\\\", \\\\\\\"output\\\\\\\": \\\\\\\"Attributes such as provider_id, patient_id, and procedure_code defined.\\\\\\\"}, {\\\\\\\"explanation\\\\\\\": \\\\\\\"Configured essential relationships between entities.\\\\\\\", \\\\\\\"output\\\\\\\": \\\\\\\"Relationships between Claim, Provider, and Invoice established.\\\\\\\"}, {\\\\\\\"explanation\\\\\\\": \\\\\\\"Defined defaults for common actions on resources.\\\\\\\", \\\\\\\"output\\\\\\\": \\\\\\\"Default actions for Claim, Provider, and Invoice set.\\\\\\\"}, {\\\\\\\"explanation\\\\\\\": \\\\\\\"Finalized settings for primary key, domain, base, and timestamps.\\\\\\\", \\\\\\\"output\\\\\\\": \\\\\\\"Resources finalized.\\\\\\\"}], \\\\\\\"final_answer\\\\\\\": \\\\\\\"The medical billing domain is constructed with entities and relationships aligned with HCPCS ontology.\\\\\\\"}</function>\\\", \\\"message\\\" => \\\"Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.\\\", \\\"type\\\" => \\\"invalid_requ" <> ...}
+```
+
+```elixir
+user_msg2 = """
+I am working on a SCOR ERP project so that I can leverage language models to optimize supply chain operations and improve business outcomes. Please create some resources that use the SCOR ontology.
+
+5 Resources
+5 steps of reasoning
+"""
+
+gen(DomainReasoning, sys_msg, user_msg2, "llama-3.3-70b-specdec")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok,
+ %DomainReasoning{
+   resources: [
+     %DomainResource{
+       name: "SupplyChain",
+       attributes: [
+         %{"modifiers" => ["required", "public"], "name" => "name", "type" => "string"},
+         %{"name" => "description", "type" => "string"}
+       ],
+       relationships: [%{"destination" => "Plant", "name" => "plants", "type" => "has_many"}],
+       default_actions: ["read", "create"],
+       primary_key: %{"name" => "id", "type" => "uuidv4"},
+       domain: "SCOR",
+       extends: ["scor-ontology"],
+       base: "Ash.Resource",
+       timestamps: true
+     },
+     %DomainResource{
+       name: "Plant",
+       attributes: [
+         %{"modifiers" => ["required", "public"], "name" => "name", "type" => "string"},
+         %{"name" => "location", "type" => "string"}
+       ],
+       relationships: [
+         %{"destination" => "SupplyChain", "name" => "supply_chain", "type" => "belongs_to"},
+         %{"destination" => "Inventory", "name" => "inventory", "type" => "has_many"}
+       ],
+       default_actions: ["read", "create"],
+       primary_key: %{"name" => "id", "type" => "uuidv4"},
+       domain: "SCOR",
+       extends: ["scor-ontology"],
+       base: "Ash.Resource",
+       timestamps: true
+     },
+     %DomainResource{
+       name: "Inventory",
+       attributes: [
+         %{"modifiers" => ["required", "public"], "name" => "product_id", "type" => "string"},
+         %{"name" => "quantity", "type" => "integer"}
+       ],
+       relationships: [%{"destination" => "Plant", "name" => "plant", "type" => "belongs_to"}],
+       default_actions: ["read", "create"],
+       primary_key: %{"name" => "id", "type" => "uuidv4"},
+       domain: "SCOR",
+       extends: ["scor-ontology"],
+       base: "Ash.Resource",
+       timestamps: true
+     },
+     %DomainResource{
+       name: "Order",
+       attributes: [
+         %{"modifiers" => ["required", "public"], "name" => "customer_id", "type" => "string"},
+         %{"name" => "order_date", "type" => "date"}
+       ],
+       relationships: [
+         %{"destination" => "OrderItem", "name" => "order_items", "type" => "has_many"}
+       ],
+       default_actions: ["read", "create"],
+       primary_key: %{"name" => "id", "type" => "uuidv4"},
+       domain: "SCOR",
+       extends: ["scor-ontology"],
+       base: "Ash.Resource",
+       timestamps: true
+     },
+     %DomainResource{
+       name: "OrderItem",
+       attributes: [
+         %{"modifiers" => ["required", "public"], "name" => "order_id", "type" => "string"},
+         %{"name" => "product_id", "type" => "string"}
+       ],
+       relationships: [%{"destination" => "Order", "name" => "order", "type" => "belongs_to"}],
+       default_actions: ["read", "create"],
+       primary_key: %{"name" => "id", "type" => "uuidv4"},
+       domain: "SCOR",
+       extends: ["scor-ontology"],
+       base: "Ash.Resource",
+       timestamps: true
+     }
+   ],
+   steps: [
+     %Step{
+       explanation: "Identified key entities from the SCOR ontology relevant to supply chain operations, including SupplyChain, Plant, Inventory, Order, and OrderItem.",
+       output: "These entities provide a foundation for modeling supply chain operations."
+     },
+     %Step{
+       explanation: "Defined core attributes for each entity based on SCOR standards and common business practices.",
+       output: "Attributes added to each resource, including names, descriptions, locations, and product information."
+     },
+     %Step{
+       explanation: "Established key relationships between entities, such as a SupplyChain having multiple Plants, a Plant having multiple Inventories, and an Order having multiple OrderItems.",
+       output: "Relationships configured to reflect the complex interactions within the supply chain."
+     },
+     %Step{
+       explanation: "Determined default actions for each resource, including read and create operations, to support basic supply chain management functionality.",
+       output: "Default actions defined for each resource, enabling core operations like data retrieval and creation."
+     },
+     %Step{
+       explanation: "Configured primary keys, domains, and extensions for each resource to ensure data integrity, consistency, and adherence to SCOR principles.",
+       output: "Resources fully configured with primary keys, domains, and extensions, ready for use in the SCOR ERP project."
+     }
+   ],
+   final_answer: "The SCOR ERP project is structured with key entities, attributes, and relationships derived from the SCOR ontology, providing a solid foundation for optimizing supply chain operations and improving business outcomes."
+ }}
+```
+
+<!-- livebook:{"offset":49904,"stamp":{"token":"XCP.Z5fYC1q_xPmnaoFy8m2JtodEovolkqhBQHiNrOvrejtXVBGZXwfjT3-WGnx_B3OXvtBaRiv9TGXZ99EYQfXZ6QC7-3USZm4n3hAzF_4RK5m1BIH09-O1","version":2}} -->

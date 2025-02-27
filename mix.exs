@@ -74,7 +74,8 @@ defmodule AshSwarm.MixProject do
       {:ymlr, "~> 5.1"},
       {:toml, "~> 0.7"},
       {:instructor, "~> 0.1.0"},
-      {:oban_web, "~> 2.11"}
+      {:oban_web, "~> 2.11"},
+      {:openai_ex, "~> 0.8"}
     ]
   end
 

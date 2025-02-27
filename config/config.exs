@@ -16,11 +16,11 @@ config :ash_swarm, Oban,
 config :ash_swarm, Oban,
   repo: AshSwarm.Repo,
   plugins: [
-    {Oban.Plugins.Cron,
-     crontab: [
-       {"* * * * *", AshSwarm.Reactors.QASagaJob,
-        [args: %{question: "How can we create AGI with a LLM?"}]}
-     ]}
+    # {Oban.Plugins.Cron,
+    #  crontab: [
+    #    {"* * * * *", AshSwarm.Reactors.QASagaJob,
+    #     [args: %{question: "Show me the 25 C4 model diagrams for AGI"}]}
+    #  ]}
   ],
   queues: [default: 10]
 

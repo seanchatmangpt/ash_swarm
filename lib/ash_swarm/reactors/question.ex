@@ -2,7 +2,8 @@ defmodule AshSwarm.Reactors.Question do
   use Ash.Resource,
     otp_app: :ash_swarm,
     domain: AshSwarm.Reactors,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshAdmin.Resource]
 
   actions do
     defaults [:read, :destroy, create: [:question, :answer], update: [:question, :answer]]
