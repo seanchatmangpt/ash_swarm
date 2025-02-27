@@ -15,8 +15,9 @@ alias OpenaiEx.ChatMessage
 
 This notebook creates an Orderbot, similar to the one in [Deeplearning.AI Orderbot](https://hexdocs.pm/openai_ex/dlai_orderbot.html), but using the streaming version of the Chat Completion API.
 
-```elixir
+#### Add the GROQ_API_KEY to your Livebook Personal Secrets then Toggle to allow access
 
+```elixir
 openai =
   System.fetch_env!("LB_GROQ_API_KEY")
   |> OpenaiEx.new()
@@ -178,4 +179,4 @@ context = [
 openai |> StreamingOrderbot.create_orderbot(context)
 ```
 
-<!-- livebook:{"offset":5093,"stamp":{"token":"XCP.U8fO9Q90vC1z08QHjN2otz2sXHdrZC9Xgq6txGhic7DwAI429FLUm2olhj2Yw7AAdqqqMvYvdszMij5shx4HQgkpPKCF3D5dFr2squb0s5yMtFxi84vo","version":2}} -->
+<!-- livebook:{"offset":5181,"stamp":{"token":"XCP._zaN72wmySHo7xaz9aD3IN5qf1-kEhH8wbwEODcWjvEDi5ojDXqyxZWh88eGpNlcMH-iIvTF1V7zTfjb8gMwFOarNk09uFkWwKnmoCgebNonZoX5ayTC","version":2}} -->

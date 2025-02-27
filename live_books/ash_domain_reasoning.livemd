@@ -1,6 +1,6 @@
 <!-- livebook:{"persist_outputs":true} -->
 
-# InstructorEx Ash Resource
+# Ash Domain Reasoning (at bottom)
 
 ```elixir
 Mix.install(
@@ -32,6 +32,8 @@ Application.put_env(:instructor, :groq, [
 ```
 
 ## Introduction
+
+#### Add the GROQ_API_KEY to your Livebook Personal Secrets then Toggle to allow access
 
 Instructor is a library to do structured prompting with OpenAI and open source LLMs. While the idea is pretty simple, through this and the other examples you'll realize how powerful a concept this is.
 
@@ -1410,4 +1412,4 @@ gen(DomainReasoning, sys_msg, user_msg2, "llama-3.3-70b-specdec")
  }}
 ```
 
-<!-- livebook:{"offset":49904,"stamp":{"token":"XCP.Z5fYC1q_xPmnaoFy8m2JtodEovolkqhBQHiNrOvrejtXVBGZXwfjT3-WGnx_B3OXvtBaRiv9TGXZ99EYQfXZ6QC7-3USZm4n3hAzF_4RK5m1BIH09-O1","version":2}} -->
+<!-- livebook:{"offset":50000,"stamp":{"token":"XCP.kvvrwTZIzVndGyPPXgJKTL3Py4TKwxSMK7_4Tpm16v72x3RTQ4O85dbB-4LjiahXD7m7PrecUuKxYwN1U8urIuf_AyzGI1m_f2fyb_I2C-mxPs0Z3Dd3","version":2}} -->
