@@ -24,7 +24,7 @@ config :ash_swarm, Oban,
   ],
   queues: [default: 10]
 
-default_instructor_adaptor =
+default_instructor_adapter =
   "ASH_SWARM_DEFAULT_INSTRUCTOR_ADAPTER"
   |> System.get_env("Instructor.Adapters.Groq")
   |> String.trim()
@@ -32,7 +32,7 @@ default_instructor_adaptor =
   |> String.to_atom()
 
 config :instructor,
-  adapter: default_instructor_adaptor
+  adapter: default_instructor_adapter
 
 config :instructor, :groq,
   api_url: System.get_env("GROQ_API_URL", "https://api.groq.com/openai"),
