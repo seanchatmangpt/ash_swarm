@@ -41,7 +41,7 @@ defmodule AshSwarm.MixProject do
       {:ash_postgres, "~> 2.0"},
       {:ash_json_api, "~> 1.0"},
       {:ash_phoenix, "~> 2.0"},
-      {:sourceror, "~> 1.7", only: [:dev, :test]},
+      {:sourceror, "~> 1.7"},
       {:ash, "~> 3.0"},
       {:igniter, "~> 0.5"},
       {:phoenix, "~> 1.7.20"},
