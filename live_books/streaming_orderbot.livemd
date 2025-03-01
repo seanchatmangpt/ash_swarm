@@ -60,7 +60,7 @@ defmodule OpenaiEx.Notebooks.StreamingOrderbot do
   def stream_to_completions(%{body_stream: body_stream}) do
     body_stream
     |> Stream.flat_map(& &1)
-    |> Stream.map(fn %{data: d} -> d |> Map.get("choices") |> List.first() |> Map.get("delta") end)
+    |> Stream.map(fn %{data: d} -> d |> Map.get("choices") |> List.first(%{}) |> Map.get("delta", %{}) end)
     |> Stream.filter(fn map -> map |> Map.has_key?("content") end)
     |> Stream.map(fn map -> map |> Map.get("content") end)
   end
@@ -71,7 +71,7 @@ defmodule OpenaiEx.Notebooks.StreamingOrderbot do
         stream
         |> stream_to_completions()
         |> Enum.reduce("", fn token, text ->
-          next = text <> token
+          next = (text || "") <> (token || "")          
           Kino.Frame.render(frame, Kino.Text.new(next))
           next
         end)
