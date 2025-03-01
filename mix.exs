@@ -33,6 +33,8 @@ defmodule AshSwarm.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ex_machina, "~> 2.0"},
+      {:mox, "~> 1.0"},
       {:open_api_spex, "~> 3.0"},
       {:oban, "~> 2.0"},
       {:ash_state_machine, "~> 0.2"},
