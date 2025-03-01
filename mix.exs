@@ -43,7 +43,7 @@ defmodule AshSwarm.MixProject do
       {:ash_phoenix, "~> 2.0"},
       {:sourceror, "~> 1.7", only: [:dev, :test]},
       {:ash, "~> 3.0"},
-      {:igniter, "~> 0.5", only: [:dev, :test]},
+      {:igniter, "~> 0.5"},
       {:phoenix, "~> 1.7.20"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},
