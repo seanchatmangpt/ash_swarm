@@ -24,12 +24,25 @@ config :ash_swarm, Oban,
   ],
   queues: [default: 10]
 
+default_instructor_adapter =
+  "ASH_SWARM_DEFAULT_INSTRUCTOR_ADAPTER"
+  |> System.get_env("Instructor.Adapters.Groq")
+  |> String.trim()
+  |> String.replace_prefix("", "Elixir.")
+  |> String.to_atom()
+
 config :instructor,
-  adapter: Instructor.Adapters.Groq
+  adapter: default_instructor_adapter
 
 config :instructor, :groq,
   api_url: System.get_env("GROQ_API_URL", "https://api.groq.com/openai"),
   api_key: System.get_env("GROQ_API_KEY", "")
+
+config :instructor, :openai,
+  api_url: System.get_env("OPENAI_API_URL"),
+  api_key: System.get_env("OPENAI_API_KEY", "")
+
+config :instructor, :gemini, api_key: System.get_env("GEMINI_API_KEY")
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},

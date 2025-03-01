@@ -17,6 +17,7 @@ AshSwarm is an Elixir-based project that explores how to use the [Ash Framework]
 - [Why Elixir (and Ash)?](#why-elixir-and-ash)
 - [Roadmap / Future Directions](#roadmap--future-directions)
 - [How to Run Locally](#how-to-run-locally)
+- [LLM Provider Configuration](#llm-provider-configuration)
 - [License](#license)
 
 ---
@@ -135,6 +136,39 @@ There’s also a “Domain Reasoning” Livebook illustrating how to:
    - Launch `livebook server` (or your local environment).  
    - Open the `live_books/` folder to see examples like `StreamingOrderBot.livemd` or `domain_reasoning.livemd`.  
    - Don’t forget to set your LLM API key as a Livebook secret if you plan to test streaming.
+
+---
+
+## LLM Provider Configuration
+
+AshSwarm uses environment variables to configure LLM providers for the Instructor library. You can customize these settings based on your preferred provider:
+
+### Core Configuration
+
+- `ASH_SWARM_DEFAULT_INSTRUCTOR_ADAPTER`: Sets the default adapter for Instructor (defaults to `Instructor.Adapters.Groq`)
+- `ASH_SWARM_DEFAULT_MODEL`: Specifies the default model to use (defaults to `gpt-4o`)
+
+### Provider-Specific Settings
+
+#### Groq Configuration
+
+```bash
+GROQ_API_URL=https://api.groq.com/openai  # Default URL for Groq
+GROQ_API_KEY=your_groq_api_key
+```
+
+#### OpenAI Configuration
+
+```bash
+OPENAI_API_URL=https://api.openai.com/v1  # Optional custom URL
+OPENAI_API_KEY=your_openai_api_key
+```
+
+#### Gemini Configuration
+
+```bash
+GEMINI_API_KEY=your_gemini_api_key
+```
 
 ---
 

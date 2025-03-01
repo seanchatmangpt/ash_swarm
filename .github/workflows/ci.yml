@@ -95,6 +95,9 @@ jobs:
       - name: Compiles without warnings
         run: mix compile --warnings-as-errors
 
+      - name: Check for unused deps in `mix.lock`
+        run: mix deps.unlock --check-unused
+
       # Step: Check that the checked in code has already been formatted.
       # This step fails if something was found unformatted.
       # Customize this step as desired.

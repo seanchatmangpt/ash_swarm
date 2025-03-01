@@ -1,5 +1,6 @@
 [
   import_deps: [
+    :reactor,
     :oban,
     :ash_oban,
     :ash_admin,
