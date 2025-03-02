@@ -3,13 +3,17 @@ defmodule Mix.Tasks.Reactor.Gen.ReactorRunTest do
   import ExUnit.CaptureIO
 
   test "runs mix reactor.gen.reactor but does not proceed with changes" do
+    # ✅ Simulate pressing "n" to decline changes
     output =
-      capture_io("n\n", fn ->  # ✅ Simulate pressing "n" to decline changes
+      capture_io("n\n", fn ->
         Mix.Task.rerun("reactor.gen.reactor", [
           "MyApp.CheckoutReactor",
-          "--inputs", "email:string,password:string",
-          "--steps", "register_user:MyApp.RegisterUserStep,create_stripe_customer:MyApp.CreateStripeCustomerStep",
-          "--return", "register_user"
+          "--inputs",
+          "email:string,password:string",
+          "--steps",
+          "register_user:MyApp.RegisterUserStep,create_stripe_customer:MyApp.CreateStripeCustomerStep",
+          "--return",
+          "register_user"
         ])
       end)
 

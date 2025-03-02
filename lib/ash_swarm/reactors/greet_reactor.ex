@@ -9,6 +9,7 @@ defmodule AshSwarm.Reactors.GreetReactor do
 
   step :greet do
     argument :name, input(:name)
+
     run fn
       %{name: nil}, _ -> {:ok, "Hello, World!"}
       %{name: name}, _ -> {:ok, "Hello, #{name}"}
