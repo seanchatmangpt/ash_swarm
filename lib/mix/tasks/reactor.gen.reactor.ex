@@ -34,7 +34,8 @@ defmodule Mix.Tasks.Reactor.Gen.Reactor do
       schema: [
         input: :csv,
         step: :csv,
-        return: :string
+        return: :string,
+        ignore_if_exists: :boolean
       ],
       aliases: [
         i: :input,
