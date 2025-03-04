@@ -1,16 +1,16 @@
-defmodule Mix.Tasks.Reactor.Gen.ReactorRunTest do
+defmodule Mix.Tasks.AshSwarm.Gen.ReactorRunTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureIO
 
-  test "runs mix reactor.gen.reactor but does not proceed with changes" do
+  test "runs mix ash_swarm.gen.reactor but does not proceed with changes" do
     # ✅ Simulate pressing "n" to decline changes
     output =
       capture_io("n\n", fn ->
-        Mix.Task.rerun("reactor.gen.reactor", [
+        Mix.Task.rerun("ash_swarm.gen.reactor", [
           "MyApp.CheckoutReactor",
-          "--inputs",
+          "--input",
           "email:string,password:string",
-          "--steps",
+          "--step",
           "register_user:MyApp.RegisterUserStep,create_stripe_customer:MyApp.CreateStripeCustomerStep",
           "--return",
           "register_user"

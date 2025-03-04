@@ -1,6 +1,6 @@
-defmodule Mix.Tasks.Reactor.Gen.ReactorTest do
+defmodule Mix.Tasks.AshSwarm.Gen.ReactorModuleTest do
   use ExUnit.Case, async: true
-  alias Mix.Tasks.Reactor.Gen.Reactor
+  alias Mix.Tasks.AshSwarm.Gen.Reactor
 
   describe "parse_inputs/1" do
     test "parses valid inputs" do
