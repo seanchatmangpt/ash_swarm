@@ -1,10 +1,12 @@
 defmodule AshSwarm.Reactors.GreetReactor do
   use Reactor
 
-  input :name
+  input :name do
+    description "The name to greet."
+  end
 
   middlewares do
-    middleware AshSwarm.Reactors.Middleware.DebugMiddleware
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
   end
 
   step :greet do

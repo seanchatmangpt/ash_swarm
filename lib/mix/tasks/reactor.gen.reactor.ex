@@ -2,7 +2,14 @@ defmodule Mix.Tasks.Reactor.Gen.Reactor do
   use Igniter.Mix.Task
 
   @shortdoc "Generate a Reactor module and step modules using Igniter"
-  @example "mix reactor.gen.reactor MyApp.CheckoutReactor --inputs email:string,password:string --steps register_user:MyApp.RegisterUserStep,create_stripe_customer:MyApp.CreateStripeCustomerStep --return register_user"
+  @example """
+  mix reactor.gen.reactor MyApp.CheckoutReactor \\
+    --input email:string \\
+    -i password:string \\
+    --step register_user:MyApp.RegisterUserStep \\
+    -s create_stripe_customer:MyApp.CreateStripeCustomerStep \\
+    --return register_user
+  """
 
   @moduledoc """
   Generate a Reactor module and its step modules.
@@ -14,8 +21,8 @@ defmodule Mix.Tasks.Reactor.Gen.Reactor do
   ```
 
   Options:
-    * `--inputs` (or `-i`): A comma-separated list of inputs, each as `name:type`.
-    * `--steps` (or `-s`): A comma-separated list of steps, each as `step_name:StepModule`.
+    * `--input` (or `-i`): A comma-separated list of inputs, each as `name:type`.
+    * `--step` (or `-s`): A comma-separated list of steps, each as `step_name:StepModule`.
     * `--return` (or `-r`): The name of the step to return.
   """
 
@@ -25,13 +32,13 @@ defmodule Mix.Tasks.Reactor.Gen.Reactor do
       positional: [:reactor],
       example: @example,
       schema: [
-        inputs: :csv,
-        steps: :csv,
+        input: :csv,
+        step: :csv,
         return: :string
       ],
       aliases: [
-        i: :inputs,
-        s: :steps,
+        i: :input,
+        s: :step,
         r: :return
       ]
     }
@@ -46,8 +53,8 @@ defmodule Mix.Tasks.Reactor.Gen.Reactor do
       Mix.shell().info("Skipping Reactor generation: #{reactor} already exists.")
       igniter
     else
-      inputs = parse_inputs(Keyword.get(igniter.args.options, :inputs, []))
-      steps = parse_steps(Keyword.get(igniter.args.options, :steps, []))
+      inputs = parse_inputs(Keyword.get(igniter.args.options, :input, []))
+      steps = parse_steps(Keyword.get(igniter.args.options, :step, []))
 
       return_step =
         Keyword.get(igniter.args.options, :return) ||
