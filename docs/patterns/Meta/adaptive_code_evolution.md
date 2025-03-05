@@ -198,6 +198,69 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
 end
 ```
 
+## Example Implementation
+
+An example implementation of the AI-powered Adaptive Code Evolution pattern is available in `AshSwarm.Examples.AIAdaptiveEvolutionExample`. This module demonstrates:
+
+1. How to define different types of AI-powered analyzers, strategies, and evaluators
+2. How to integrate AI capabilities with traditional adaptive code evolution features
+3. How to implement a complete workflow using AI-powered components
+
+### Example Module Structure
+
+```elixir
+defmodule AshSwarm.Examples.AIAdaptiveEvolutionExample do
+  use AshSwarm.Foundations.AdaptiveCodeEvolution
+  
+  # Define AI-powered code analyzers
+  ai_analyzer :performance_analyzer,
+    description: "Analyzes code for performance optimization opportunities",
+    analyzer_module: AshSwarm.Foundations.AICodeAnalysis,
+    analyzer_function: :analyze_code,
+    options: [focus_areas: [:performance, :efficiency], max_suggestions: 5]
+  
+  # Define AI-powered adaptation strategies  
+  ai_strategy :comprehensive_optimization,
+    description: "Generates optimized implementations balancing performance and readability",
+    strategy_module: AshSwarm.Foundations.AIAdaptationStrategies,
+    strategy_function: :generate_optimized_implementation
+    
+  # Define AI-powered experiment evaluators
+  ai_evaluator :comprehensive_evaluator,
+    description: "Evaluates experiments based on multiple criteria",
+    evaluator_module: AshSwarm.Foundations.AIExperimentEvaluation,
+    evaluator_function: :evaluate_experiment
+  
+  # Example functions demonstrating the capabilities
+  def demo_complete_workflow(module, options \\ []) do
+    # 1. Analyze code with AI
+    {:ok, analysis} = analyze_with_ai(:performance_analyzer, module)
+    
+    # 2. Generate optimized implementation
+    {:ok, optimization} = optimize_with_ai(:comprehensive_optimization, code, usage_data)
+    
+    # 3. Apply optimization (simulated)
+    
+    # 4. Evaluate results
+    {:ok, evaluation} = evaluate_with_ai(:comprehensive_evaluator, original, optimized, metrics)
+    
+    # Return results
+    %{analysis: analysis, optimization: optimization, evaluation: evaluation}
+  end
+end
+```
+
+### Complete Workflow
+
+The example module includes a `demo_complete_workflow/2` function that demonstrates a complete adaptive code evolution cycle using AI components:
+
+1. **AI-Powered Analysis**: Analyzes a module's code to identify optimization opportunities
+2. **AI-Powered Optimization**: Generates optimized implementations based on the analysis and usage patterns
+3. **Adaptation Application**: Applies the optimized code (simulated in the example)
+4. **AI-Powered Evaluation**: Evaluates the effectiveness of the adaptation using performance metrics
+
+This example provides a practical starting point for implementing AI-powered adaptive code evolution in your own applications.
+
 ## Implementation Recommendations
 
 To fully implement the AI-enhanced Adaptive Code Evolution Pattern:
