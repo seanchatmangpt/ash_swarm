@@ -41,6 +41,14 @@ defmodule Mix.Tasks.AshSwarm.Adaptive.Evolve do
       Mix.raise("Expected a file path as an argument, got none")
     end
 
+    # Check for GROQ API key
+    unless AshSwarm.InstructorHelper.groq_api_key_present?() do
+      Mix.shell().error(IO.ANSI.red() <> "Error: GROQ_API_KEY environment variable is not set or is empty." <> IO.ANSI.reset())
+      Mix.shell().info("Please set it before running this task:")
+      Mix.shell().info("  export GROQ_API_KEY=your_groq_api_key")
+      System.halt(1)
+    end
+
     file_path = List.first(file_paths)
     
     unless File.exists?(file_path) do

@@ -600,4 +600,18 @@ defmodule AshSwarm.InstructorHelper do
         {nil, nil}
     end
   end
+  
+  def api_keys_present? do
+    %{
+      groq: System.get_env("GROQ_API_KEY"),
+      openai: System.get_env("OPENAI_API_KEY"),
+      anthropic: System.get_env("ANTHROPIC_API_KEY")
+    }
+    |> Enum.any?(fn {_k, v} -> v != nil and v != "" end)
+  end
+
+  def groq_api_key_present? do
+    key = System.get_env("GROQ_API_KEY")
+    key != nil and key != ""
+  end
 end
