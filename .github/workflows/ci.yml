@@ -107,9 +107,15 @@ jobs:
       - name: Check Formatting
         run: mix format --check-formatted
 
-      # Step: Execute the tests.
+      # Step: Execute the tests with explicit database settings
       - name: Run tests
-        run: mix test
+        run: |
+          echo "Running tests with database settings:"
+          echo "User: $POSTGRES_USER"
+          echo "Host: localhost"
+          echo "DB: $POSTGRES_DB"
+          mix test --trace
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost
