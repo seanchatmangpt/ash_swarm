@@ -439,6 +439,11 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
   end
   
   @doc false
+  defp generate_evaluation_id do
+    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+  end
+  
+  @doc false
   # Process the analysis result and add metadata
   defp process_analysis_result(result, original_code, adapted_code) do
     # Create a map with analysis data and metadata
@@ -466,12 +471,6 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       timestamp: DateTime.utc_now(),
       id: generate_ranking_id()
     }
-  end
-  
-  @doc false
-  # Reserved for future use to generate unique evaluation IDs
-  defp generate_evaluation_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
   end
   
   @doc false
