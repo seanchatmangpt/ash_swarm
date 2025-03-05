@@ -8,6 +8,9 @@ on:
 
 env:
   MIX_ENV: test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: ash_swarm_test
 
 permissions:
   contents: read
@@ -107,3 +110,6 @@ jobs:
       # Step: Execute the tests.
       - name: Run tests
         run: mix test
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
