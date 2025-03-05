@@ -1,4 +1,4 @@
-defmodule AshSwarm.Examples.ComplexOperations do
+defmodule AshSwarm.Examples.OptimizedComplexOperations do
   @moduledoc """
   Module containing examples of operations that can be optimized
   using the Adaptive Code Evolution pattern.
