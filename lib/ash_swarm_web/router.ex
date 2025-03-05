@@ -55,6 +55,11 @@ defmodule AshSwarmWeb.Router do
 
     oban_dashboard("/oban")
 
+      live "/marketplace", MarketplaceLive.Index, :index
+  live "/transactions", TransactionsLive.Index, :index
+  live "/analytics", AnalyticsLive.Index, :index
+  live "/settings", SettingsLive.Index, :index
+
     get "/", PageController, :home
     auth_routes AuthController, AshSwarm.Accounts.User, path: "/auth"
     sign_out_route AuthController
@@ -75,6 +80,8 @@ defmodule AshSwarmWeb.Router do
                   AshSwarmWeb.AuthOverrides,
                   AshAuthentication.Phoenix.Overrides.Default
                 ]
+
+    live "/dashboard", DashboardLive
 
     live "/workflows", WorkflowLive.Index, :index
     live "/workflows/new", WorkflowLive.Index, :new
