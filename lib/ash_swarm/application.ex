@@ -19,6 +19,9 @@ defmodule AshSwarm.Application do
       {Phoenix.PubSub, name: AshSwarm.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: AshSwarm.Finch},
+      # Start adaptive code evolution services
+      AshSwarm.Foundations.UsageStats,
+      AshSwarm.Foundations.AdaptiveScheduler,
       # Start a worker by calling: AshSwarm.Worker.start_link(arg)
       # {AshSwarm.Worker, arg},
       # Start to serve requests, typically the last entry
