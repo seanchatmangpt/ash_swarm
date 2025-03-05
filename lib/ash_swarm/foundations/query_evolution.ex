@@ -6,8 +6,6 @@ defmodule AshSwarm.Foundations.QueryEvolution do
   actual usage patterns.
   """
   
-  alias AshSwarm.Foundations.UsageStats
-  
   require Logger
   
   @doc """
@@ -50,7 +48,7 @@ defmodule AshSwarm.Foundations.QueryEvolution do
   
     - A list of query patterns found in the module.
   """
-  def analyze_query_patterns(module, options \\ []) do
+  def analyze_query_patterns(module, _options \\ []) do
     Logger.debug("Analyzing query patterns for #{inspect(module)}")
     
     # This is a simplified implementation
@@ -119,7 +117,7 @@ defmodule AshSwarm.Foundations.QueryEvolution do
   
     - A list of optimization opportunities.
   """
-  def identify_query_optimizations(query_patterns, usage_stats, options \\ []) do
+  def identify_query_optimizations(query_patterns, usage_stats, _options \\ []) do
     Logger.debug("Identifying query optimization opportunities")
     
     # This is a simplified implementation
@@ -199,19 +197,12 @@ defmodule AshSwarm.Foundations.QueryEvolution do
       # 2. Run the experiment
       # 3. Apply the optimization if successful
       
-      case run_optimization_experiment(module, optimization, options) do
-        {:ok, :success, evaluation} ->
-          Logger.info("Optimization successful: #{optimization.description}")
-          Logger.debug("Evaluation: #{inspect(evaluation)}")
-          # In a real implementation, this would apply the optimization to the actual code
-          
-        {:ok, :failure, evaluation} ->
-          Logger.warning("Optimization unsuccessful: #{optimization.description}")
-          Logger.debug("Evaluation: #{inspect(evaluation)}")
-          
-        {:error, reason} ->
-          Logger.error("Error running optimization experiment: #{inspect(reason)}")
-      end
+      # We only expect success for now, though in a real implementation 
+      # we would handle failures and errors too
+      {:ok, :success, evaluation} = run_optimization_experiment(module, optimization, options)
+      Logger.info("Optimization successful: #{optimization.description}")
+      Logger.debug("Evaluation: #{inspect(evaluation)}")
+      # In a real implementation, this would apply the optimization to the actual code
     end)
     
     :ok
@@ -219,7 +210,7 @@ defmodule AshSwarm.Foundations.QueryEvolution do
   
   # Helper functions
   
-  defp run_optimization_experiment(module, optimization, _options) do
+  defp run_optimization_experiment(_module, optimization, _options) do
     # This is a simplified implementation of running an experiment
     # In a real implementation, this would:
     # 1. Create a temporary copy of the module

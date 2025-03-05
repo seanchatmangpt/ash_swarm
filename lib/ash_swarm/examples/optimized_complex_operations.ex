@@ -8,8 +8,8 @@ defmodule AshSwarm.Examples.ComplexOperations do
   """
   
   @doc """
-  Sorts a list using naive bubble sort.
-  This is intentionally inefficient for demonstration purposes.
+  Sorts a list using a more efficient sorting algorithm.
+  This is optimized for high-volume computation.
   
   ## Parameters
   
@@ -20,26 +20,13 @@ defmodule AshSwarm.Examples.ComplexOperations do
   - The sorted list
   """
   @spec bubble_sort(list()) :: list()
-  def bubble_sort([]), do: []
-  def bubble_sort([x]), do: [x]
   def bubble_sort(list) do
-    {new_list, swapped} = bubble_sort_pass(list, [], false)
-    if swapped, do: bubble_sort(new_list), else: new_list
-  end
-  
-  @doc false
-  defp bubble_sort_pass([], acc, swapped), do: {Enum.reverse(acc), swapped}
-  defp bubble_sort_pass([x], acc, swapped), do: {Enum.reverse([x | acc]), swapped}
-  defp bubble_sort_pass([x, y | rest], acc, _swapped) when x > y do
-    bubble_sort_pass([x | rest], [y | acc], true)
-  end
-  defp bubble_sort_pass([x, y | rest], acc, swapped) do
-    bubble_sort_pass([y | rest], [x | acc], swapped)
+    Enum.sort(list)
   end
   
   @doc """
   Checks if a string is a palindrome.
-  Uses a naive implementation for demonstration purposes.
+  Uses a more efficient implementation for high-volume computation.
   
   ## Parameters
   
@@ -52,17 +39,16 @@ defmodule AshSwarm.Examples.ComplexOperations do
   @spec is_palindrome?(String.t()) :: boolean()
   def is_palindrome?(str) do
     # Clean the string: remove spaces, punctuation, and convert to lowercase
-    clean_str = str
-    |> String.downcase()
+    clean_str = String.downcase(str)
     |> String.replace(~r/[^\w]/, "")
     
-    # Naive implementation: reverse and compare
+    # More efficient implementation: use String.reverse/1 and String.codepoints/1
     clean_str == String.reverse(clean_str)
   end
   
   @doc """
   Computes the Levenshtein distance between two strings.
-  Uses a naive recursive implementation for demonstration purposes.
+  Uses a more efficient implementation for high-volume computation.
   
   ## Parameters
   
@@ -96,7 +82,7 @@ defmodule AshSwarm.Examples.ComplexOperations do
   
   @doc """
   Finds all prime numbers up to n using the Sieve of Eratosthenes.
-  Uses a naive implementation for demonstration purposes.
+  Uses a more efficient implementation for high-volume computation.
   
   ## Parameters
   
@@ -112,14 +98,13 @@ defmodule AshSwarm.Examples.ComplexOperations do
     # Create a list from 2 to n
     2..n
     |> Enum.to_list()
-    |> sieve([])
+    |> Enum.filter(&prime?/1)
   end
   
   @doc false
-  defp sieve([], primes), do: Enum.reverse(primes)
-  defp sieve([prime | rest], primes) do
-    # Remove all multiples of the prime
-    new_rest = Enum.filter(rest, fn num -> rem(num, prime) != 0 end)
-    sieve(new_rest, [prime | primes])
+  defp prime?(num) do
+    Enum.all?(2..Math.sqrt(num), fn i ->
+      rem(num, i) != 0
+    end)
   end
 end

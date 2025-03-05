@@ -458,7 +458,7 @@ defmodule AshSwarm.Foundations.CodeAnalysis do
     anti_patterns
   end
   
-  defp calculate_cohesion(module_info) do
+  defp calculate_cohesion(_module_info) do
     # This is a simplified implementation
     # In a real implementation, this would calculate LCOM (Lack of Cohesion of Methods)
     # or a similar metric
@@ -493,7 +493,7 @@ defmodule AshSwarm.Foundations.CodeAnalysis do
     |> Enum.map(fn {module, count} -> {module, count} end)
   end
   
-  defp identify_dependency_patterns(deps, _options) do
+  defp identify_dependency_patterns(_deps, _options) do
     # This is a simplified implementation
     # In a real implementation, this would look for good dependency patterns
     
@@ -501,7 +501,7 @@ defmodule AshSwarm.Foundations.CodeAnalysis do
     []
   end
   
-  defp identify_dependency_anti_patterns(deps, coupling, _options) do
+  defp identify_dependency_anti_patterns(_deps, coupling, _options) do
     # This is a simplified implementation
     # In a real implementation, this would look for dependency anti-patterns
     anti_patterns = []
@@ -530,7 +530,7 @@ defmodule AshSwarm.Foundations.CodeAnalysis do
     result
   end
   
-  defp is_delegation?(name, arity, ast) do
+  defp is_delegation?(_name, _arity, _ast) do
     # This is a simplified implementation to detect delegation pattern
     # In a real implementation, this would look for functions that just
     # delegate to another module or internal function

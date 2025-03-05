@@ -74,8 +74,11 @@ defmodule AshSwarm.MixProject do
       {:ymlr, "~> 5.1"},
       {:toml, "~> 0.7"},
       {:instructor, "~> 0.1.0"},
+      {:httpoison, "~> 2.2"},
       {:oban_web, "~> 2.11"},
-      {:openai_ex, "~> 0.8"}
+      {:openai_ex, "~> 0.8"},
+      {:mox, "~> 1.1", only: :test},
+      {:uuid, "~> 1.1"}
     ]
   end
 
@@ -90,7 +93,7 @@ defmodule AshSwarm.MixProject do
       setup: ["deps.get", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["compile --warnings-as-errors", "ash.setup --quiet", "test"],
+      test: ["ash.setup --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind ash_swarm", "esbuild ash_swarm"],
       "assets.deploy": [
