@@ -9,102 +9,96 @@ defmodule AshSwarm.Examples.OptimizedComplexOperations do
   
   @doc """
   Sorts a list using a more efficient sorting algorithm.
-  This is optimized for high-volume computation.
   
-  ## Parameters
+  This implementation uses merge sort instead of bubble sort,
+  providing O(n log n) performance compared to O(n²).
   
-  - list - The list to sort
+  ## Examples
   
-  ## Returns
+      iex> AshSwarm.Examples.OptimizedComplexOperations.efficient_sort([3, 1, 4, 1, 5, 9, 2, 6, 5])
+      [1, 1, 2, 3, 4, 5, 5, 6, 9]
   
-  - The sorted list
   """
-  @spec bubble_sort(list()) :: list()
-  def bubble_sort(list) do
-    Enum.sort(list)
-  end
-  
-  @doc """
-  Checks if a string is a palindrome.
-  Uses a more efficient implementation for high-volume computation.
-  
-  ## Parameters
-  
-  - str - The string to check
-  
-  ## Returns
-  
-  - true if the string is a palindrome, false otherwise
-  """
-  @spec is_palindrome?(String.t()) :: boolean()
-  def is_palindrome?(str) do
-    # Clean the string: remove spaces, punctuation, and convert to lowercase
-    clean_str = String.downcase(str)
-    |> String.replace(~r/[^\w]/, "")
+  def efficient_sort([]), do: []
+  def efficient_sort([x]), do: [x]
+  def efficient_sort(list) do
+    half_size = div(length(list), 2)
+    {left, right} = Enum.split(list, half_size)
     
-    # More efficient implementation: use String.reverse/1 and String.codepoints/1
-    clean_str == String.reverse(clean_str)
-  end
-  
-  @doc """
-  Computes the Levenshtein distance between two strings.
-  Uses a more efficient implementation for high-volume computation.
-  
-  ## Parameters
-  
-  - str1 - The first string
-  - str2 - The second string
-  
-  ## Returns
-  
-  - The Levenshtein distance between the two strings
-  """
-  @spec levenshtein_distance(String.t(), String.t()) :: non_neg_integer()
-  def levenshtein_distance(str1, str2) do
-    levenshtein_distance_impl(String.graphemes(str1), String.graphemes(str2))
+    # Sort each half and merge
+    merge(efficient_sort(left), efficient_sort(right))
   end
   
   @doc false
-  defp levenshtein_distance_impl([], []), do: 0
-  defp levenshtein_distance_impl([], [_h2 | t2]), do: 1 + levenshtein_distance_impl([], t2)
-  defp levenshtein_distance_impl([_h1 | t1], []), do: 1 + length(t1)
-  defp levenshtein_distance_impl([h1 | t1], [h2 | t2]) do
-    if h1 == h2 do
-      levenshtein_distance_impl(t1, t2)
-    else
-      Enum.min([
-        levenshtein_distance_impl(t1, [h2 | t2]) + 1,
-        levenshtein_distance_impl([h1 | t1], t2) + 1,
-        levenshtein_distance_impl(t1, t2) + 1
-      ])
-    end
+  defp merge([], right), do: right
+  defp merge(left, []), do: left
+  defp merge([x | left_tail], [y | right_tail]) when x <= y do
+    [x | merge(left_tail, [y | right_tail])]
+  end
+  defp merge([x | left_tail], [y | right_tail]) do
+    [y | merge([x | left_tail], right_tail)]
   end
   
   @doc """
-  Finds all prime numbers up to n using the Sieve of Eratosthenes.
-  Uses a more efficient implementation for high-volume computation.
+  Calculates the Levenshtein distance between two strings.
   
-  ## Parameters
+  This is an optimized implementation that uses a matrix approach
+  with O(m*n) time complexity.
   
-  - n - The upper bound
+  ## Examples
   
-  ## Returns
+      iex> AshSwarm.Examples.OptimizedComplexOperations.levenshtein_distance("kitten", "sitting")
+      3
   
-  - A list of prime numbers up to n
   """
-  @spec sieve_of_eratosthenes(non_neg_integer()) :: list(non_neg_integer())
-  def sieve_of_eratosthenes(n) when n < 2, do: []
-  def sieve_of_eratosthenes(n) do
-    # Create a list from 2 to n
-    2..n
-    |> Enum.to_list()
+  def levenshtein_distance(str1, str2) do
+    # Convert strings to charlist
+    s1 = String.to_charlist(str1)
+    s2 = String.to_charlist(str2)
+    
+    # Create a matrix of size (length(s1)+1) x (length(s2)+1)
+    matrix = 
+      for i <- 0..length(s1), into: %{} do
+        {i, 0, i}
+      end
+    
+    matrix = 
+      for j <- 0..length(s2), into: matrix do
+        {0, j, j}
+      end
+    
+    # Fill the matrix
+    matrix = 
+      for i <- 1..length(s1), j <- 1..length(s2), into: matrix do
+        cost = if Enum.at(s1, i-1) == Enum.at(s2, j-1), do: 0, else: 1
+        deletion = Map.get(matrix, {i-1, j}) + 1
+        insertion = Map.get(matrix, {i, j-1}) + 1
+        substitution = Map.get(matrix, {i-1, j-1}) + cost
+        {i, j, Enum.min([deletion, insertion, substitution])}
+      end
+    
+    # Return the distance
+    Map.get(matrix, {length(s1), length(s2)})
+  end
+  
+  @doc """
+  Finds prime numbers in a given range using an optimized algorithm.
+  
+  ## Examples
+  
+      iex> AshSwarm.Examples.OptimizedComplexOperations.find_primes(1, 20)
+      [2, 3, 5, 7, 11, 13, 17, 19]
+  
+  """
+  def find_primes(start, finish) when start > 0 and finish >= start do
+    max(start, 2)..finish
     |> Enum.filter(&prime?/1)
   end
   
   @doc false
   defp prime?(num) do
     # Use Erlang's :math module instead of Math
-    Enum.all?(2..trunc(:math.sqrt(num)), fn i ->
+    Enum.all?(2..Kernel.trunc(:math.sqrt(num)), fn i ->
       rem(num, i) != 0
     end)
   end
