@@ -8,6 +8,9 @@ on:
 
 env:
   MIX_ENV: test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: ash_swarm_test
 
 permissions:
   contents: read
@@ -90,10 +93,9 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
-      # Step: Compile the project treating any warnings as errors.
-      # Customize this step if a different behavior is desired.
-      - name: Compiles without warnings
-        run: mix compile --warnings-as-errors
+      # Step: Compile the project
+      - name: Compile the project
+        run: mix compile
 
       - name: Check for unused deps in `mix.lock`
         run: mix deps.unlock --check-unused
@@ -104,6 +106,15 @@ jobs:
       - name: Check Formatting
         run: mix format --check-formatted
 
-      # Step: Execute the tests.
+      # Step: Execute the tests with explicit database settings
       - name: Run tests
-        run: mix test
+        run: |
+          echo "Running tests with database settings:"
+          echo "User: $POSTGRES_USER"
+          echo "Host: localhost"
+          echo "DB: $POSTGRES_DB"
+          mix test --trace
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost

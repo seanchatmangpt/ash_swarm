@@ -20,6 +20,7 @@ AshSwarm is an Elixir-based project that explores how to use the [Ash Framework]
 - [Livebook Guide](#livebook-guide)
 - [LLM Provider Configuration](#llm-provider-configuration)
 - [License](#license)
+- [Development Setup](#development-setup)
 
 ---
 
@@ -203,3 +204,42 @@ Please see the [LICENSE](./LICENSE) file in this repository for licensing detail
 ---
 
 **In summary**, AshSwarm is an ongoing exploration of how to harness Elixir's concurrency and Ash's resource DSL to build *explicit*, domain-driven AI flows, rather than rely on a single monolithic "agent." By combining short, well-defined tasks with LLM calls, we can achieve flexible domain reasoning while staying cost-effective and maintainable.
+
+## Development Setup
+
+### Database Configuration
+
+The project uses PostgreSQL. To set up your local development environment:
+
+1. Copy the example configuration file:
+   ```bash
+   cp config/dev.exs.example config/dev.exs
+   ```
+
+2. Edit the `config/dev.exs` file with your database credentials or set the following environment variables:
+   - `POSTGRES_USER` - PostgreSQL username (default: "postgres")
+   - `POSTGRES_PASSWORD` - PostgreSQL password (default: "postgres")
+   - `POSTGRES_HOST` - PostgreSQL host (default: "localhost")
+   - `POSTGRES_DB` - PostgreSQL database name (default: "ash_swarm_dev")
+
+### Running the Application
+
+Use the provided startup script to run both Phoenix and Livebook servers:
+
+```bash
+./start_ash_swarm.sh
+```
+
+This will start:
+- Phoenix server at http://localhost:4000
+- Livebook server at http://localhost:8092 (password: livebooksecretpassword)
+
+Available Livebooks:
+- streaming_orderbot
+- reactor_practice
+- ash_domain_reasoning
+
+To stop the servers:
+```bash
+pkill -f phx.server && pkill -f livebook
+```

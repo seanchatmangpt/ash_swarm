@@ -8,9 +8,9 @@ defmodule Mix.Tasks.Reactor.Gen.ReactorRunTest do
       capture_io("n\n", fn ->
         Mix.Task.rerun("reactor.gen.reactor", [
           "MyApp.CheckoutReactor",
-          "--inputs",
+          "--input",
           "email:string,password:string",
-          "--steps",
+          "--step",
           "register_user:MyApp.RegisterUserStep,create_stripe_customer:MyApp.CreateStripeCustomerStep",
           "--return",
           "register_user"
