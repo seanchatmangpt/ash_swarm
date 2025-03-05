@@ -121,20 +121,6 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
         "additionalProperties" => false
       }
     end
-    
-    # Initialize with default values to avoid nil
-    def __struct__ do
-      %__MODULE__{
-        optimized_code: "",
-        explanation: "",
-        documentation: "",
-        expected_improvements: %ExpectedImprovements{
-          performance: "",
-          maintainability: "",
-          safety: ""
-        }
-      }
-    end
   end
   
   defmodule IncrementalImprovement do
