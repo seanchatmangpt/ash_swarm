@@ -103,7 +103,8 @@ defmodule AshSwarm.Examples.ComplexOperations do
   
   @doc false
   defp prime?(num) do
-    Enum.all?(2..Math.sqrt(num), fn i ->
+    # Use Erlang's :math module instead of Math
+    Enum.all?(2..trunc(:math.sqrt(num)), fn i ->
       rem(num, i) != 0
     end)
   end
