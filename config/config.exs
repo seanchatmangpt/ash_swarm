@@ -99,7 +99,13 @@ config :spark,
 config :ash_swarm,
   ecto_repos: [AshSwarm.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [AshSwarm.Accounts, AshSwarm.Workflows, AshSwarm.Reactors, AshSwarm.Ontology]
+  ash_domains: [
+    AshSwarm.Kpis,
+    AshSwarm.Accounts,
+    AshSwarm.Workflows,
+    AshSwarm.Reactors,
+    AshSwarm.Ontology
+  ]
 
 # Configures the endpoint
 config :ash_swarm, AshSwarmWeb.Endpoint,
