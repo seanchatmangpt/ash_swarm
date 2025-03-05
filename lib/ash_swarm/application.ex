@@ -22,7 +22,8 @@ defmodule AshSwarm.Application do
       # Start a worker by calling: AshSwarm.Worker.start_link(arg)
       # {AshSwarm.Worker, arg},
       # Start to serve requests, typically the last entry
-      AshSwarmWeb.Endpoint
+      AshSwarmWeb.Endpoint,
+      {AshAuthentication.Supervisor, [otp_app: :ash_swarm]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -63,7 +63,7 @@ config :ash_swarm, AshSwarmWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :ash_swarm, dev_routes: true
+config :ash_swarm, dev_routes: true, token_signing_secret: "zfr8c52Bch3xu5uSjG2CZxBiLJAsMbhq"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
