@@ -420,6 +420,7 @@ defmodule AshSwarm.Foundations.AICodeAnalysis do
     analysis_result
   end
   
+  @compile {:no_warn_undefined, [{__MODULE__, :enrich_opportunities, 1}]}
   @doc false
   # Reserved for future use to enrich opportunities with additional metadata
   defp enrich_opportunities(opportunities) do

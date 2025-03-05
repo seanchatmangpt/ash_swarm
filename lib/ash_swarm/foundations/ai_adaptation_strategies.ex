@@ -616,25 +616,28 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
     end
   end
   
+  @compile {:no_warn_undefined, [{__MODULE__, :process_optimization_result, 2}]}
+  @compile {:no_warn_undefined, [{__MODULE__, :generate_optimization_id, 0}]}
+  @compile {:no_warn_undefined, [{__MODULE__, :get_module_source, 1}]}
   @doc false
-  # Reserved for future use when processing optimization results with additional context
+  # Kept for future use
   defp process_optimization_result(result, original_code) do
     # Convert struct to map and add metadata
     result
     |> Map.from_struct()
-    |> Map.update!(:expected_improvements, &Map.from_struct/1)
     |> Map.put(:original_code, original_code)
     |> Map.put(:timestamp, DateTime.utc_now())
     |> Map.put(:id, generate_optimization_id())
   end
   
   @doc false
-  # Reserved for future use to generate unique optimization IDs
+  # Kept for future use
   defp generate_optimization_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+    UUID.uuid4()
   end
-  
-  # Helper function to get module source code for testing/fallback
+
+  @doc false
+  # Kept for future use
   defp get_module_source(module) do
     """
     defmodule #{inspect(module)} do

@@ -125,19 +125,6 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
         "additionalProperties" => false
       }
     end
-
-    # Initialize with default values to avoid nil
-    def __struct__ do
-      %__MODULE__{
-        evaluation: %Evaluation{
-          success_rating: 0.0,
-          recommendation: "",
-          risks: [],
-          improvement_areas: []
-        },
-        explanation: ""
-      }
-    end
   end
   
   defmodule Analysis do
@@ -434,6 +421,71 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     def slice(_response), do: {:error, __MODULE__}
   end
   
+  @compile {:no_warn_undefined, [{__MODULE__, :process_evaluation_result, 4}]}
+  @compile {:no_warn_undefined, [{__MODULE__, :generate_evaluation_id, 0}]}
+  @doc false
+  # Reserved for future use when processing evaluation results with additional context
+  defp process_evaluation_result(result, original_code, adapted_code, metrics) do
+    # Create a map with evaluation data and metadata
+    %{
+      evaluation: Map.from_struct(result.evaluation),
+      explanation: result.explanation,
+      original_code: original_code,
+      adapted_code: adapted_code,
+      metrics: metrics,
+      timestamp: DateTime.utc_now(),
+      id: generate_evaluation_id()
+    }
+  end
+  
+  @doc false
+  # Process the analysis result and add metadata
+  defp process_analysis_result(result, original_code, adapted_code) do
+    # Create a map with analysis data and metadata
+    %{
+      analysis: Map.from_struct(result.analysis),
+      summary: result.summary,
+      original_code: original_code,
+      adapted_code: adapted_code,
+      timestamp: DateTime.utc_now(),
+      id: generate_analysis_id()
+    }
+  end
+  
+  @doc false
+  # Process the ranking result and add metadata
+  defp process_ranking_result(result, original_code, adaptations, metrics) do
+    # Create a map with ranking data and metadata
+    %{
+      rankings: Enum.map(result.rankings, &Map.from_struct/1),
+      best_adaptation: result.best_adaptation,
+      explanation: result.explanation,
+      original_code: original_code,
+      adaptations: adaptations,
+      metrics: metrics,
+      timestamp: DateTime.utc_now(),
+      id: generate_ranking_id()
+    }
+  end
+  
+  @doc false
+  # Reserved for future use to generate unique evaluation IDs
+  defp generate_evaluation_id do
+    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+  end
+  
+  @doc false
+  # Generate a unique ID for each analysis
+  defp generate_analysis_id do
+    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+  end
+  
+  @doc false
+  # Generate a unique ID for each ranking
+  defp generate_ranking_id do
+    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+  end
+  
   @doc """
   Evaluates an optimization experiment, comparing original code, optimized code, and metrics.
 
@@ -728,72 +780,5 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       _ ->
         inspect(metrics, pretty: true)
     end
-  end
-  
-  @doc false
-  # Reserved for future use when processing evaluation results with additional context
-  defp process_evaluation_result(result, original_code, adapted_code, metrics) do
-    # Create a map with evaluation data and metadata
-    %{
-      evaluation: Map.from_struct(result.evaluation),
-      explanation: result.explanation,
-      original_code: original_code,
-      adapted_code: adapted_code,
-      metrics: metrics,
-      timestamp: DateTime.utc_now(),
-      id: generate_evaluation_id()
-    }
-  end
-  
-  @doc """
-  Process the analysis result and add metadata
-  """
-  defp process_analysis_result(result, original_code, adapted_code) do
-    # Create a map with analysis data and metadata
-    %{
-      analysis: Map.from_struct(result.analysis),
-      summary: result.summary,
-      original_code: original_code,
-      adapted_code: adapted_code,
-      timestamp: DateTime.utc_now(),
-      id: generate_analysis_id()
-    }
-  end
-  
-  @doc """
-  Process the ranking result and add metadata
-  """
-  defp process_ranking_result(result, original_code, adaptations, metrics) do
-    # Create a map with ranking data and metadata
-    %{
-      rankings: Enum.map(result.rankings, &Map.from_struct/1),
-      best_adaptation: result.best_adaptation,
-      explanation: result.explanation,
-      original_code: original_code,
-      adaptations: adaptations,
-      metrics: metrics,
-      timestamp: DateTime.utc_now(),
-      id: generate_ranking_id()
-    }
-  end
-  
-  @doc false
-  # Reserved for future use to generate unique evaluation IDs
-  defp generate_evaluation_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
-  end
-  
-  @doc """
-  Generate a unique ID for each analysis
-  """
-  defp generate_analysis_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
-  end
-  
-  @doc """
-  Generate a unique ID for each ranking
-  """
-  defp generate_ranking_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
   end
 end

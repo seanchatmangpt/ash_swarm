@@ -554,56 +554,8 @@ defmodule AshSwarm.InstructorHelper do
     end
   end
   
-  def api_keys_present? do
-    %{
-      groq: System.get_env("GROQ_API_KEY"),
-      openai: System.get_env("OPENAI_API_KEY"),
-      anthropic: System.get_env("ANTHROPIC_API_KEY")
-    }
-    |> Enum.any?(fn {_k, v} -> v != nil and v != "" end)
-  end
-
-  def groq_api_key_present? do
-    key = System.get_env("GROQ_API_KEY")
-    key != nil and key != ""
-  end
-  
-  # Helper to recursively map a JSON map to a struct
-  defp map_to_struct(struct_type, map) when is_struct(struct_type) and is_map(map) do
-    # Extract the struct module
-    module = struct_type.__struct__
-    
-    # Get the struct fields
-    struct_fields = module.__struct__() |> Map.keys() |> MapSet.new()
-    
-    # Filter the map to only include keys that exist in the struct
-    filtered_map =
-      map
-      |> Enum.filter(fn {key, _value} ->
-        string_key = if is_atom(key), do: key, else: String.to_existing_atom(key)
-        MapSet.member?(struct_fields, string_key)
-      end)
-      |> Enum.into(%{})
-    
-    # Convert string keys to atoms if needed
-    atom_map =
-      filtered_map
-      |> Enum.map(fn {key, value} ->
-        atom_key = if is_atom(key), do: key, else: String.to_existing_atom(key)
-        {atom_key, value}
-      end)
-      |> Enum.into(%{})
-    
-    # Create a new struct with the filtered values
-    struct(module, atom_map)
-  end
-  
-  # Handle the case when the first argument is not a struct
-  defp map_to_struct(_non_struct, map) do
-    # Just return the map as is
-    map
-  end
-  
+  @compile {:no_warn_undefined, [{__MODULE__, :convert_to_simple_json_schema, 1}]}
+  @doc false
   # For future use - converts module to simple JSON schema
   defp convert_to_simple_json_schema(model) do
     cond do
@@ -661,5 +613,55 @@ defmodule AshSwarm.InstructorHelper do
         # Default fallback
         %{"type" => "string"}
     end
+  end
+  
+  def api_keys_present? do
+    %{
+      groq: System.get_env("GROQ_API_KEY"),
+      openai: System.get_env("OPENAI_API_KEY"),
+      anthropic: System.get_env("ANTHROPIC_API_KEY")
+    }
+    |> Enum.any?(fn {_k, v} -> v != nil and v != "" end)
+  end
+
+  def groq_api_key_present? do
+    key = System.get_env("GROQ_API_KEY")
+    key != nil and key != ""
+  end
+  
+  # Helper to recursively map a JSON map to a struct
+  defp map_to_struct(struct_type, map) when is_struct(struct_type) and is_map(map) do
+    # Extract the struct module
+    module = struct_type.__struct__
+    
+    # Get the struct fields
+    struct_fields = module.__struct__() |> Map.keys() |> MapSet.new()
+    
+    # Filter the map to only include keys that exist in the struct
+    filtered_map =
+      map
+      |> Enum.filter(fn {key, _value} ->
+        string_key = if is_atom(key), do: key, else: String.to_existing_atom(key)
+        MapSet.member?(struct_fields, string_key)
+      end)
+      |> Enum.into(%{})
+    
+    # Convert string keys to atoms if needed
+    atom_map =
+      filtered_map
+      |> Enum.map(fn {key, value} ->
+        atom_key = if is_atom(key), do: key, else: String.to_existing_atom(key)
+        {atom_key, value}
+      end)
+      |> Enum.into(%{})
+    
+    # Create a new struct with the filtered values
+    struct(module, atom_map)
+  end
+  
+  # Handle the case when the first argument is not a struct
+  defp map_to_struct(_non_struct, map) do
+    # Just return the map as is
+    map
   end
 end
