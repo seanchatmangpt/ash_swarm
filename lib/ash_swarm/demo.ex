@@ -5,7 +5,7 @@ defmodule AshSwarm.Demo do
   """
   require Logger
   alias AshSwarm.Foundations.AIExperimentEvaluation
-  
+
   @doc """
   Run the Adaptive Code Evolution demo using Groq API.
   Evaluates original and optimized code to demonstrate AI evaluation capabilities.
@@ -15,7 +15,7 @@ defmodule AshSwarm.Demo do
     IO.puts("Running Adaptive Code Evolution demo with Groq API...")
     run_demo("llama3-8b-8192")
   end
-  
+
   @doc """
   Run the Adaptive Code Evolution demo using OpenAI API.
   Evaluates original and optimized code to demonstrate AI evaluation capabilities.
@@ -25,7 +25,7 @@ defmodule AshSwarm.Demo do
     IO.puts("Running Adaptive Code Evolution demo with OpenAI API...")
     run_demo("gpt-3.5-turbo")
   end
-  
+
   @doc """
   Run the demo with a specific model.
   """
@@ -43,7 +43,7 @@ defmodule AshSwarm.Demo do
       end
     end
     """
-    
+
     optimized_code = """
     defmodule MathOperations do
       def factorial(n) when n >= 0, do: do_factorial(n, 1)
@@ -57,21 +57,21 @@ defmodule AshSwarm.Demo do
       end
     end
     """
-    
+
     metrics = %{
       performance: "95% faster",
       memory_usage: "80% less memory used",
       test_results: "All tests passing",
       static_analysis: "No warnings or issues detected"
     }
-    
+
     # Call evaluate_experiment function
     case AIExperimentEvaluation.evaluate_experiment(
-      original_code,
-      optimized_code,
-      metrics,
-      model: model
-    ) do
+           original_code,
+           optimized_code,
+           metrics,
+           model: model
+         ) do
       {:ok, result} ->
         IO.puts("\n🟢 Experiment Evaluation Successful!\n")
         IO.puts("Explanation:")
@@ -84,18 +84,18 @@ defmodule AshSwarm.Demo do
         IO.puts("\nImprovement Areas:")
         Enum.each(result.evaluation.improvement_areas, fn area -> IO.puts("  • #{area}") end)
         IO.puts("\nDemo completed successfully!")
-        
+
       {:error, reason} ->
         IO.puts("\n🔴 Experiment Evaluation Failed!")
         IO.puts("[error] #{reason}")
         IO.inspect(reason, label: "Error")
     end
   end
-  
+
   @doc """
   Demonstrates the generation of optimized code for a slow Fibonacci and prime number implementation.
   Uses AI to generate optimized implementations and evaluates the results.
-  
+
   Parameters:
   - model - The AI model to use for code generation and evaluation
   """
@@ -141,25 +141,28 @@ defmodule AshSwarm.Demo do
         IO.puts("```\n")
         IO.puts("Explanation of Changes:")
         IO.puts(response.explanation)
-        
+
         # Display generated documentation if available
         if response.documentation != nil && response.documentation != "" do
           IO.puts("\n📚 Generated Documentation:")
           IO.puts(response.documentation)
         end
-        
+
         # Display expected improvements
         IO.puts("\nExpected Improvements:")
-        
-        if response.expected_improvements.performance != nil && response.expected_improvements.performance != "" do
+
+        if response.expected_improvements.performance != nil &&
+             response.expected_improvements.performance != "" do
           IO.puts("- Performance: #{response.expected_improvements.performance}")
         end
-        
-        if response.expected_improvements.maintainability != nil && response.expected_improvements.maintainability != "" do
+
+        if response.expected_improvements.maintainability != nil &&
+             response.expected_improvements.maintainability != "" do
           IO.puts("- Maintainability: #{response.expected_improvements.maintainability}")
         end
-        
-        if response.expected_improvements.safety != nil && response.expected_improvements.safety != "" do
+
+        if response.expected_improvements.safety != nil &&
+             response.expected_improvements.safety != "" do
           IO.puts("- Safety: #{response.expected_improvements.safety}")
         end
 
@@ -179,7 +182,8 @@ defmodule AshSwarm.Demo do
             # Extract success rating
             success_rating =
               if is_map(evaluation) && Map.has_key?(evaluation, :evaluation) &&
-                   is_map(evaluation.evaluation) && Map.has_key?(evaluation.evaluation, :success_rating) do
+                   is_map(evaluation.evaluation) &&
+                   Map.has_key?(evaluation.evaluation, :success_rating) do
                 evaluation.evaluation.success_rating
               else
                 0.0
@@ -190,7 +194,8 @@ defmodule AshSwarm.Demo do
             # Extract recommendation
             recommendation =
               if is_map(evaluation) && Map.has_key?(evaluation, :evaluation) &&
-                   is_map(evaluation.evaluation) && Map.has_key?(evaluation.evaluation, :recommendation) do
+                   is_map(evaluation.evaluation) &&
+                   Map.has_key?(evaluation.evaluation, :recommendation) do
                 evaluation.evaluation.recommendation
               else
                 "No specific recommendation provided"
@@ -201,7 +206,8 @@ defmodule AshSwarm.Demo do
             # Extract key risks
             risks =
               if is_map(evaluation) && Map.has_key?(evaluation, :evaluation) &&
-                   is_map(evaluation.evaluation) && Map.has_key?(evaluation.evaluation, :key_risks) do
+                   is_map(evaluation.evaluation) &&
+                   Map.has_key?(evaluation.evaluation, :key_risks) do
                 evaluation.evaluation.key_risks
               else
                 []
@@ -229,7 +235,7 @@ defmodule AshSwarm.Demo do
         {:error, reason}
     end
   end
-  
+
   @doc """
   Get available API information to check which APIs can be used.
   This is helpful for understanding which demos can be run.
@@ -242,15 +248,16 @@ defmodule AshSwarm.Demo do
       groq: System.get_env("GROQ_API_KEY"),
       gemini: System.get_env("GEMINI_API_KEY")
     }
-    
+
     # Map to show availability
     %{
       openai: api_keys.openai != nil,
       groq: api_keys.groq != nil,
       gemini: api_keys.gemini != nil,
-      available_apis: Enum.filter([:openai, :groq, :gemini], fn api -> 
-        Map.get(api_keys, api) != nil
-      end)
+      available_apis:
+        Enum.filter([:openai, :groq, :gemini], fn api ->
+          Map.get(api_keys, api) != nil
+        end)
     }
   end
 end

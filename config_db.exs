@@ -11,16 +11,18 @@ for repo <- repos do
 
   # Update the repo configuration
   repo_config = Application.get_env(:ash_swarm, repo, [])
-  repo_config = Keyword.merge(repo_config, [
-    username: "ash_user",
-    password: "ash_password",
-    hostname: "localhost",
-    database: "ash_swarm_dev"
-  ])
-  
+
+  repo_config =
+    Keyword.merge(repo_config,
+      username: "ash_user",
+      password: "ash_password",
+      hostname: "localhost",
+      database: "ash_swarm_dev"
+    )
+
   # Apply the updated configuration
   Application.put_env(:ash_swarm, repo, repo_config)
-  
+
   IO.puts("Configuration updated: #{inspect(Application.get_env(:ash_swarm, repo))}")
 end
 

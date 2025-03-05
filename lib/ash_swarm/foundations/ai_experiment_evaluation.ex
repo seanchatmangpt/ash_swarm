@@ -1,15 +1,24 @@
 defmodule AshSwarm.Foundations.AIExperimentEvaluation do
   @moduledoc """
   Uses language models to evaluate the outcomes of code adaptation experiments.
-  
+
   This module provides capabilities to analyze original code, adapted code, and
   performance metrics to determine the success and impact of code adaptations.
   """
-  
+
   alias AshSwarm.InstructorHelper
-  alias AshSwarm.Foundations.AIExperimentEvaluation.{EvaluationResponse, Evaluation, AnalysisResponse, Analysis, RankingResponse, RankingItem}
+
+  alias AshSwarm.Foundations.AIExperimentEvaluation.{
+    EvaluationResponse,
+    Evaluation,
+    AnalysisResponse,
+    Analysis,
+    RankingResponse,
+    RankingItem
+  }
+
   require Logger
-  
+
   # Define response models using Ecto schemas
   defmodule Evaluation do
     @moduledoc """
@@ -26,20 +35,20 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       field :risks, {:array, :string}, default: []
       field :improvement_areas, {:array, :string}, default: []
     end
-    
+
     @type t :: %__MODULE__{
-      success_rating: float(),
-      recommendation: String.t(),
-      risks: [String.t()],
-      improvement_areas: [String.t()]
-    }
-    
+            success_rating: float(),
+            recommendation: String.t(),
+            risks: [String.t()],
+            improvement_areas: [String.t()]
+          }
+
     def changeset(evaluation, attrs) do
       evaluation
       |> cast(attrs, [:success_rating, :recommendation, :risks, :improvement_areas])
       |> validate_required([:success_rating, :recommendation])
     end
-    
+
     @doc """
     Converts the schema to a JSON schema for Instructor integration.
     """
@@ -78,7 +87,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       }
     end
   end
-  
+
   defmodule EvaluationResponse do
     @moduledoc """
     Schema representing the full response from experiment evaluation.
@@ -95,19 +104,19 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       embeds_one :evaluation, Evaluation, on_replace: :update
       field :explanation, :string, default: ""
     end
-    
+
     @type t :: %__MODULE__{
-      evaluation: Evaluation.t(),
-      explanation: String.t()
-    }
-    
+            evaluation: Evaluation.t(),
+            explanation: String.t()
+          }
+
     def changeset(response, attrs) do
       response
       |> cast(attrs, [:explanation])
       |> validate_required([:explanation])
       |> cast_embed(:evaluation, required: true)
     end
-    
+
     @doc """
     Converts the schema to a JSON schema for Instructor integration.
     """
@@ -126,7 +135,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       }
     end
   end
-  
+
   defmodule Analysis do
     @moduledoc """
     Schema representing the analysis of code differences.
@@ -151,12 +160,21 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     """
     def changeset(analysis, attrs) do
       analysis
-      |> cast(attrs, [:architectural_changes, :algorithm_improvements, :readability_impact, 
-                     :maintainability_impact, :potential_issues])
-      |> validate_required([:architectural_changes, :algorithm_improvements, 
-                           :readability_impact, :maintainability_impact])
+      |> cast(attrs, [
+        :architectural_changes,
+        :algorithm_improvements,
+        :readability_impact,
+        :maintainability_impact,
+        :potential_issues
+      ])
+      |> validate_required([
+        :architectural_changes,
+        :algorithm_improvements,
+        :readability_impact,
+        :maintainability_impact
+      ])
     end
-    
+
     @doc """
     Converts the schema to a JSON schema for Instructor integration.
     """
@@ -189,16 +207,16 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
           }
         },
         "required" => [
-          "architectural_changes", 
-          "algorithm_improvements", 
-          "readability_impact", 
+          "architectural_changes",
+          "algorithm_improvements",
+          "readability_impact",
           "maintainability_impact"
         ],
         "additionalProperties" => false
       }
     end
   end
-  
+
   defmodule AnalysisResponse do
     @moduledoc """
     Schema representing the full response from code analysis.
@@ -214,11 +232,11 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       embeds_one :analysis, Analysis
       field :summary, :string
     end
-    
+
     @type t :: %__MODULE__{
-      analysis: Analysis.t(),
-      summary: String.t()
-    }
+            analysis: Analysis.t(),
+            summary: String.t()
+          }
 
     def changeset(response, attrs) do
       response
@@ -226,7 +244,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       |> validate_required([:summary])
       |> cast_embed(:analysis, required: true)
     end
-    
+
     @doc """
     Converts the schema to a JSON schema for Instructor integration.
     """
@@ -245,7 +263,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       }
     end
   end
-  
+
   defmodule RankingItem do
     @moduledoc """
     Schema representing a ranked adaptation.
@@ -273,7 +291,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       |> validate_number(:score, greater_than_or_equal_to: 0.0, less_than_or_equal_to: 1.0)
       |> validate_inclusion(:recommendation, ["adopt", "consider", "reject"])
     end
-    
+
     @doc """
     Converts the schema to a JSON schema for Instructor integration.
     """
@@ -316,7 +334,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       }
     end
   end
-  
+
   defmodule RankingResponse do
     @moduledoc """
     Schema representing the full response from adaptation ranking.
@@ -325,21 +343,21 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     use Ecto.Schema
     use Instructor.EctoType
     import Ecto.Changeset
-    
+
     alias AshSwarm.Foundations.AIExperimentEvaluation.RankingItem, as: Ranking
-    
+
     @primary_key false
     embedded_schema do
       embeds_many :rankings, Ranking
       field :best_adaptation, :string
       field :explanation, :string
     end
-    
+
     @type t :: %__MODULE__{
-      best_adaptation: String.t(),
-      explanation: String.t(),
-      rankings: [Ranking.t()]
-    }
+            best_adaptation: String.t(),
+            explanation: String.t(),
+            rankings: [Ranking.t()]
+          }
 
     def changeset(response, attrs) do
       response
@@ -347,7 +365,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       |> validate_required([:best_adaptation, :explanation])
       |> cast_embed(:rankings, required: true)
     end
-    
+
     @doc """
     Converts the schema to a JSON schema for Instructor integration.
     """
@@ -374,18 +392,19 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       }
     end
   end
-  
+
   defimpl Enumerable, for: Evaluation do
-    def count(_evaluation), do: {:ok, 4}  # Number of fields
-    
+    # Number of fields
+    def count(_evaluation), do: {:ok, 4}
+
     def member?(_evaluation, {:success_rating, _}), do: {:ok, true}
     def member?(_evaluation, {:recommendation, _}), do: {:ok, true}
     def member?(_evaluation, {:risks, _}), do: {:ok, true}
     def member?(_evaluation, {:improvement_areas, _}), do: {:ok, true}
     def member?(_evaluation, _), do: {:ok, false}
-    
+
     def slice(_evaluation), do: {:error, __MODULE__}
-    
+
     def reduce(evaluation, acc, fun) do
       # Convert struct to a list of {key, value} pairs
       # This will let the struct be used in Enum functions
@@ -395,32 +414,37 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
         {:risks, evaluation.risks},
         {:improvement_areas, evaluation.improvement_areas}
       ]
-      
+
       Enumerable.List.reduce(fields, acc, fun)
     end
   end
-  
+
   defimpl Enumerable, for: EvaluationResponse do
     def count(_response), do: {:error, __MODULE__}
-    
+
     def member?(_response, _element), do: {:error, __MODULE__}
-    
+
     def reduce(_response, {:halt, acc}, _fun), do: {:halted, acc}
     def reduce(response, {:suspend, acc}, fun), do: {:suspended, acc, &reduce(response, &1, fun)}
-    def reduce(%EvaluationResponse{evaluation: evaluation, explanation: explanation}, {:cont, acc}, fun) do
+
+    def reduce(
+          %EvaluationResponse{evaluation: evaluation, explanation: explanation},
+          {:cont, acc},
+          fun
+        ) do
       # Create a list of key-value pairs from the struct fields
       elements = [
         {:evaluation, evaluation},
         {:explanation, explanation}
       ]
-      
+
       # Then reduce over this list
       Enumerable.reduce(elements, {:cont, acc}, fun)
     end
-    
+
     def slice(_response), do: {:error, __MODULE__}
   end
-  
+
   @compile {:no_warn_undefined, [{__MODULE__, :process_evaluation_result, 4}]}
   @compile {:no_warn_undefined, [{__MODULE__, :generate_evaluation_id, 0}]}
   @doc false
@@ -437,12 +461,12 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       id: generate_evaluation_id()
     }
   end
-  
+
   @doc false
   defp generate_evaluation_id do
     Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
   end
-  
+
   @doc false
   # Process the analysis result and add metadata
   defp process_analysis_result(result, original_code, adapted_code) do
@@ -456,7 +480,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       id: generate_analysis_id()
     }
   end
-  
+
   @doc false
   # Process the ranking result and add metadata
   defp process_ranking_result(result, original_code, adaptations, metrics) do
@@ -472,19 +496,19 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
       id: generate_ranking_id()
     }
   end
-  
+
   @doc false
   # Generate a unique ID for each analysis
   defp generate_analysis_id do
     Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
   end
-  
+
   @doc false
   # Generate a unique ID for each ranking
   defp generate_ranking_id do
     Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
   end
-  
+
   @doc """
   Evaluates an optimization experiment, comparing original code, optimized code, and metrics.
 
@@ -492,58 +516,59 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
   * `:evaluation_focus` - :performance, :reliability, or :balanced (default)
   * `:model` - The LLM model to use for evaluation
   """
-  @spec evaluate_experiment(String.t(), String.t(), map(), keyword()) :: {:ok, map()} | {:error, term()}
+  @spec evaluate_experiment(String.t(), String.t(), map(), keyword()) ::
+          {:ok, map()} | {:error, term()}
   def evaluate_experiment(original_code, optimized_code, metrics, options \\ []) do
     alias AshSwarm.Foundations.AIExperimentEvaluation.{EvaluationResponse, Evaluation}
-    
+
     focus = Keyword.get(options, :evaluation_focus, :balanced)
     model = Keyword.get(options, :model, nil)
-    
+
     # Create prompt for evaluation
     sys_msg = """
     You are an AI code evaluation assistant. Your task is to evaluate the results of a code optimization experiment.
-    
+
     Please analyze the original code, the optimized code implementation, and the metrics provided.
     Make a determination about whether the optimization was successful and should be applied.
-    
+
     Provide a comprehensive evaluation with:
     1. Success rating (0.0 to 1.0)
     2. Recommendation (whether to apply or not)
     3. Key risks
     4. Improvement areas
     """
-    
+
     user_msg = """
     # Original Code
     ```elixir
     #{original_code}
     ```
-    
+
     # Optimized Code
     ```elixir
     #{optimized_code}
     ```
-    
+
     # Metrics
     - Performance: #{metrics[:performance] || "No performance metrics available"}
     - Memory Usage: #{metrics[:memory_usage] || "No memory usage metrics available"}
     - Test Results: #{metrics[:test_results] || "No test results available"}
     - Static Analysis: #{metrics[:static_analysis] || "No static analysis results available"}
-    
+
     Please evaluate this optimization experiment with a focus on #{focus}.
     """
-    
+
     # Call InstructorHelper for evaluation
     try do
       Logger.debug("Calling InstructorHelper for evaluation")
-      
+
       # Call the gen function
       case InstructorHelper.gen(
-        %EvaluationResponse{},
-        sys_msg,
-        user_msg,
-        model
-      ) do
+             %EvaluationResponse{},
+             sys_msg,
+             user_msg,
+             model
+           ) do
         {:ok, result} ->
           # Create full evaluation result with the successful result
           evaluation_result = %{
@@ -553,22 +578,24 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
             adapted_code: optimized_code,
             metrics: metrics,
             explanation: result.explanation || "",
-            evaluation: result.evaluation || %Evaluation{
-              success_rating: 0.0,
-              recommendation: "Failed to evaluate",
-              risks: ["Evaluation failure"],
-              improvement_areas: ["Fix evaluation process"]
-            }
+            evaluation:
+              result.evaluation ||
+                %Evaluation{
+                  success_rating: 0.0,
+                  recommendation: "Failed to evaluate",
+                  risks: ["Evaluation failure"],
+                  improvement_areas: ["Fix evaluation process"]
+                }
           }
-          
+
           # Return as successful result
           {:ok, evaluation_result}
-          
+
         {:error, reason} ->
           # Handle error case
           Logger.error("Error from InstructorHelper.gen: #{inspect(reason)}")
           {:error, "Failed to evaluate experiment: #{inspect(reason)}"}
-          
+
         result when is_map(result) ->
           # Direct result was returned without being wrapped in a tuple
           evaluation_result = %{
@@ -578,17 +605,18 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
             adapted_code: optimized_code,
             metrics: metrics,
             explanation: Map.get(result, :explanation, ""),
-            evaluation: Map.get(result, :evaluation, %Evaluation{
-              success_rating: 0.0,
-              recommendation: "Failed to evaluate",
-              risks: ["Evaluation failure"],
-              improvement_areas: ["Fix evaluation process"]
-            })
+            evaluation:
+              Map.get(result, :evaluation, %Evaluation{
+                success_rating: 0.0,
+                recommendation: "Failed to evaluate",
+                risks: ["Evaluation failure"],
+                improvement_areas: ["Fix evaluation process"]
+              })
           }
-          
+
           # Return as successful result
           {:ok, evaluation_result}
-          
+
         other ->
           # Unknown result format
           Logger.error("Unexpected result format from InstructorHelper.gen: #{inspect(other)}")
@@ -601,44 +629,45 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
         {:error, "Failed to evaluate experiment: #{inspect(e)}"}
     end
   end
-  
+
   @doc """
   Evaluates a code adaptation by comparing the original code to the adapted code.
-  
+
   Parameters:
   - original_code - The original code
   - adapted_code - The adapted code
   - metrics - Optional metrics to include in the evaluation
   - options - Additional options for the evaluation
-  
+
   Returns:
   - A tuple with the result of the evaluation
   """
-  @spec evaluate_code_adaptation(String.t(), String.t(), map(), keyword()) :: {:ok, map()} | {:error, any()}
+  @spec evaluate_code_adaptation(String.t(), String.t(), map(), keyword()) ::
+          {:ok, map()} | {:error, any()}
   def evaluate_code_adaptation(original_code, adapted_code, metrics \\ %{}, options \\ []) do
     evaluate_experiment(original_code, adapted_code, metrics, options)
   end
-  
+
   @doc """
   Provides a detailed comparative analysis between original and adapted code.
-  
+
   This function goes beyond simple metrics comparison to analyze the qualitative
   differences between code versions, highlighting improvements, regressions,
   and architectural changes.
-  
+
   ## Parameters
-  
+
     * `original_code` - The original code before adaptation
     * `adapted_code` - The code after adaptation
     * `options` - Additional options for analysis customization
     
   ## Returns
-  
+
     * `{:ok, analysis}` - Detailed analysis of the differences
     * `{:error, reason}` - Error information if analysis fails
   """
-  @spec analyze_code_differences(String.t(), String.t(), keyword()) :: 
-    {:ok, map()} | {:error, any()}
+  @spec analyze_code_differences(String.t(), String.t(), keyword()) ::
+          {:ok, map()} | {:error, any()}
   def analyze_code_differences(original_code, adapted_code, options \\ []) do
     # Prepare prompt for the language model
     sys_msg = """
@@ -647,18 +676,18 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     the differences between two code versions and provide a detailed, qualitative
     assessment of the changes.
     """
-    
+
     user_msg = """
     Original code:
     ```elixir
     #{original_code}
     ```
-    
+
     Adapted code:
     ```elixir
     #{adapted_code}
     ```
-    
+
     Please provide a detailed analysis of the differences between these two code versions.
     Focus on:
     1. Architectural changes (patterns, structure, organization)
@@ -666,46 +695,46 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     3. Readability changes
     4. Maintainability impact
     5. Potential issues or concerns with the adapted code
-    
+
     Your analysis should go beyond simple line-by-line comparison and consider the broader
     implications of the changes for code quality, performance, and maintainability.
     """
-    
+
     # Use Instructor Ex to get structured analysis
     model = Keyword.get(options, :model, nil)
-    
+
     case InstructorHelper.gen(%AnalysisResponse{}, sys_msg, user_msg, model) do
       {:ok, result} ->
         # Process the result and add metadata
         processed_result = process_analysis_result(result, original_code, adapted_code)
         {:ok, processed_result}
-        
+
       {:error, reason} ->
         Logger.error("Failed to analyze code differences: #{inspect(reason)}")
         {:error, reason}
     end
   end
-  
+
   @doc """
   Evaluates a series of adaptations to determine the best candidate.
-  
+
   When multiple adaptation strategies are applied to the same code,
   this function helps determine which one provides the best overall improvement.
-  
+
   ## Parameters
-  
+
     * `original_code` - The original code before adaptation
     * `adaptations` - Map of adaptation name to adapted code
     * `metrics` - Map of adaptation name to performance metrics
     * `options` - Additional options for evaluation
     
   ## Returns
-  
+
     * `{:ok, ranking}` - Ranked list of adaptations with scores and explanations
     * `{:error, reason}` - Error information if evaluation fails
   """
-  @spec rank_adaptations(String.t(), map(), map(), keyword()) :: 
-    {:ok, list(map())} | {:error, any()}
+  @spec rank_adaptations(String.t(), map(), map(), keyword()) ::
+          {:ok, list(map())} | {:error, any()}
   def rank_adaptations(original_code, adaptations, metrics, options \\ []) do
     # Prepare prompt for the language model
     sys_msg = """
@@ -713,58 +742,59 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     to determine which provides the best overall improvement. Your evaluation should consider
     performance metrics, code quality, and maintainability.
     """
-    
+
     # Format adaptations and metrics for the prompt
-    adaptations_text = adaptations
+    adaptations_text =
+      adaptations
       |> Enum.map(fn {name, code} ->
         """
         === Adaptation: #{name} ===
         ```elixir
         #{code}
         ```
-        
+
         Metrics:
         #{format_metrics(Map.get(metrics, name, %{}))}
-        
+
         """
       end)
       |> Enum.join("\n\n")
-    
+
     user_msg = """
     Original code:
     ```elixir
     #{original_code}
     ```
-    
+
     === Adaptations and their metrics ===
-    
+
     #{adaptations_text}
-    
+
     Please rank these adaptations from best to worst based on their overall quality,
     performance improvements, and maintainability. For each adaptation, provide:
     1. A score between 0.0 and 1.0
     2. Key strengths
     3. Key weaknesses
     4. A recommendation (adopt, consider, or reject)
-    
+
     Then, identify the best adaptation and explain your reasoning.
     """
-    
+
     # Use Instructor Ex to get structured ranking
     model = Keyword.get(options, :model, nil)
-    
+
     case InstructorHelper.gen(%RankingResponse{}, sys_msg, user_msg, model) do
       {:ok, result} ->
         # Process the result and add metadata
         processed_result = process_ranking_result(result, original_code, adaptations, metrics)
         {:ok, processed_result}
-        
+
       {:error, reason} ->
         Logger.error("Failed to rank adaptations: #{inspect(reason)}")
         {:error, reason}
     end
   end
-  
+
   # Format metrics for the prompt
   defp format_metrics(metrics) do
     case metrics do
@@ -772,10 +802,10 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
         metrics
         |> Enum.map(fn {key, value} -> "- #{key}: #{inspect(value)}" end)
         |> Enum.join("\n")
-        
+
       _ when is_binary(metrics) ->
         metrics
-        
+
       _ ->
         inspect(metrics, pretty: true)
     end
