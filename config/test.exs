@@ -1,4 +1,5 @@
 import Config
+config :ash_swarm, token_signing_secret: "FVOOo171ms1ltWB0FZAK3K8EfOFOvwHM"
 config :ash_swarm, Oban, testing: :manual
 config :ash, disable_async?: true
 

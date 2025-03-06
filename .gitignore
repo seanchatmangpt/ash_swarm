@@ -15,7 +15,10 @@ erl_crash.dump
 .env
 .idea
 /priv/static/*
+/priv/static/assets/*
 !priv/static/.keep
+/priv/resource_snapshots
 node_modules
+.DS_Store
 # Ignore Livebook temporary changes
 live_books/*.autosave.livemd

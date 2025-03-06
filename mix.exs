@@ -37,6 +37,9 @@ defmodule AshSwarm.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bcrypt_elixir, "~> 3.0"},
+      {:picosat_elixir, "~> 0.2"},
+      {:ash_authentication_phoenix, "~> 2.0"},
       {:open_api_spex, "~> 3.0"},
       {:oban, "~> 2.0"},
       {:ash_state_machine, "~> 0.2"},
@@ -105,7 +108,7 @@ defmodule AshSwarm.MixProject do
         "esbuild ash_swarm --minify",
         "phx.digest"
       ],
-      "phx.routes": ["phx.routes", "ash_json_api.routes"]
+      "phx.routes": ["phx.routes", "ash_json_api.routes", "ash_authentication.phoenix.routes"]
     ]
   end
 end
