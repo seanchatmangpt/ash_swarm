@@ -1,4 +1,4 @@
-defmodule AshSwarm.Reactors.Middleware.DebugMiddleware do
+defmodule AshSwarm.Reactors.Middlewares.DebugMiddleware do
   @moduledoc """
   A Reactor middleware that logs debug information.
 

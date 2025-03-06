@@ -1,50 +1,81 @@
 # What's Next for AshSwarm
 
-This directory contains documents outlining the future roadmap and upcoming features for the AshSwarm project. These documents serve as a vision for where the project is headed and provide guidance for contributors who wish to help shape its future.
+This directory contains documentation outlining the future development roadmap and planned enhancements for the AshSwarm project. AshSwarm is committed to continuous improvement and innovation, with a focus on delivering an exceptional AI-driven business solution platform.
 
-## Overview
+## Key Areas of Focus
 
-The AshSwarm project is committed to continuous improvement and innovation. Our roadmap focuses on several key areas:
+Our development roadmap addresses six key areas:
 
-1. **Core System Enhancements** - Improvements to the fundamental architecture and capabilities of AshSwarm
-2. **AI Integration** - Advanced LLM orchestration and interaction capabilities
-3. **Developer Experience** - Tools and features to make development more productive and enjoyable
-4. **Infrastructure** - Performance monitoring, scaling, and operational improvements
-5. **Security & Compliance** - Features to ensure data protection and regulatory compliance
-6. **Ecosystem Integration** - Better integration with the broader Elixir ecosystem and external systems
+1. **Core System Enhancements** - Extending reactor capabilities, DSL improvements, and scalability optimizations
+2. **AI Integration** - Advanced LLM orchestration, reasoning tools, and AI-driven workflows
+3. **Developer Experience** - Tooling, visualizations, and productivity improvements
+4. **Infrastructure** - Performance monitoring, testing frameworks, and deployment options
+5. **Security & Compliance** - Access controls, data protection, and compliance features
+6. **Ecosystem Integration** - Connections to Ash Framework, Phoenix, BEAM, databases, and third-party services
 
-## Documents in this Directory
+## Document Overview
+
+This directory contains detailed documentation for each focus area:
 
 | Document | Description |
 |----------|-------------|
-| [Future Features](./future_features.md) | High-level overview of planned features and enhancements across all categories |
-| [Enhanced LLM Orchestration](./enhanced_llm_orchestration.md) | Detailed plans for advanced LLM orchestration capabilities |
-| [Developer Experience](./developer_experience.md) | Improvements to development tools, interfaces, and workflows |
-| [Performance Monitoring](./performance_monitoring.md) | Telemetry, metrics collection, and performance analysis features |
-| [Testing Infrastructure](./testing_infrastructure.md) | Enhancements to testing capabilities and frameworks |
-| [Security & Compliance](./security_compliance.md) | Security features, access control, and regulatory compliance tools |
-| [Ecosystem Integration](./ecosystem_integration.md) | Integration with the Elixir/Phoenix ecosystem and external systems |
+| [Future Features](./future_features.md) | Core system improvements and foundational enhancements |
+| [Enhanced LLM Orchestration](./llm_orchestration.md) | Advanced AI integration and reasoning capabilities |
+| [Developer Experience](./developer_experience.md) | Tools and improvements for developer productivity |
+| [Performance Monitoring](./performance_monitoring.md) | Observability and monitoring capabilities |
+| [Testing Infrastructure](./testing_infrastructure.md) | Frameworks for comprehensive testing |
+| [Security & Compliance](./security_compliance.md) | Features ensuring secure and compliant operations |
+| [Ecosystem Integration](./ecosystem_integration.md) | Integration with broader ecosystem technologies |
+| [Reactor Tools](./reactor_tools.md) | Debug middleware and reactor generation capabilities |
+| [AI Reasoning](./ai_reasoning.md) | Business process automation through AI-driven reasoning |
+| [Business Solutions](./business_solutions.md) | Solution-focused approach to AI-native business systems |
+| [EOD Update - March 3, 2025](./eod_update.md) | Summary of recent developments presented on March 3 |
 
-## Contribution Opportunities
+## Recent Updates
 
-Many of the features described in these documents present excellent opportunities for contribution. If you're interested in working on any of these features, please:
+The latest developments in the AshSwarm project include:
 
-1. Check the [Issues](https://github.com/user/ash_swarm/issues) to see if there's already work being tracked
-2. Discuss your ideas in the [Discussions](https://github.com/user/ash_swarm/discussions) section
-3. Submit a proposal as a new issue, referencing the relevant feature document
+- **Debug Middleware** - Enhanced observability with comprehensive reactor execution visibility
+- **CLI-Powered Code Generation** - Automated reactor generation through the `mix reactor.gen.reactor` task
+- **AI-Driven Reasoning** - Business process automation through domain-driven design and workflow orchestration
+- **Solutions Approach** - Shift from application-focused to solution-focused development
+- **Adaptive Code Evolution** - AI-powered system to analyze, optimize, and evaluate Elixir code
+
+## Recent Additions
+
+Recent additions to the AshSwarm project are detailed in:
+
+- [Reactor Debugging & Generation Tools](./reactor_tools.md) - Debug middleware and reactor generation tools
+- [AI-Driven Business Reasoning](./ai_reasoning.md) - AI-powered business process automation
+- [Business Solutions Approach](./business_solutions.md) - Focus on business outcomes over technical features
+- [EOD Update - March 3, 2025](./eod_update.md) - Summary of recent project developments
+
+## Related Materials
+
+For a presentation of these recent developments, see the EOD slides:
+
+- **End of Day Presentation**: Available at `docs/eod_2025_3_3/slides.md`
+- **View Instructions**: Navigate to the directory, run `npm install` and `npm run dev`
+
+## Contributing
+
+We welcome community feedback and contributions to these roadmap documents. Please feel free to:
+
+- Open GitHub issues with feature suggestions
+- Start discussions on implementation approaches
+- Contribute improvements via pull requests
 
 ## Roadmap Status
 
-These roadmap documents are living documents that will evolve as the project progresses. Features may be added, modified, or reprioritized based on community feedback and project needs.
+These documents represent our current vision and are living documents that will evolve based on community feedback, technological advancements, and business needs. Items may be reprioritized as development progresses.
 
-The current status of each feature can be tracked through our issue system. Features that have been implemented will be documented in the main project documentation and removed from these roadmap documents in future updates.
+## Current Priorities & Timeline
 
-## Priorities and Timeline
+Our immediate focus areas include:
 
-Our current development priorities (as of the latest update) are:
+1. **Debug Middleware & Observability** - Providing complete visibility into reactor execution (In Progress)
+2. **Reactor Generation Tools** - Expanding CLI capabilities for rapid development (Active Development)
+3. **AI-Driven Process Design** - Enhancing business reasoning capabilities (Early Development)
+4. **Solution Methodology** - Developing a structured approach to solution development (Planning)
 
-1. **Core DSL Capabilities** - Enhancing the domain-specific language for creating swarms
-2. **Testing Infrastructure** - Building robust testing tools for LLM-powered applications
-3. **Developer Experience** - Creating intuitive tools for working with AshSwarm
-
-While we don't maintain a strict timeline, we aim to deliver incremental improvements in each release, focusing on these priority areas first. 
+We operate on an iterative development model, with regular releases delivering incremental improvements. Major feature roadmaps are typically implemented over 3-6 month timeframes.

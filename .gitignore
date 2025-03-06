@@ -7,6 +7,8 @@ erl_crash.dump
 *.ez
 *.beam
 /config/*.secret.exs
+# Add personal database configuration
+/config/dev.exs
 .elixir_ls/
 .lh/
 .aider*
@@ -14,3 +16,6 @@ erl_crash.dump
 .idea
 /priv/static/*
 !priv/static/.keep
+node_modules
+# Ignore Livebook temporary changes
+live_books/*.autosave.livemd
