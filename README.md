@@ -14,6 +14,7 @@ AshSwarm is an Elixir-based project that explores how to use the [Ash Framework]
 - [Examples and Livebooks](#examples-and-livebooks)
   - [Streaming Order Bot](#streaming-order-bot)
   - [Domain Reasoning Livebook](#domain-reasoning-livebook)
+  - [Adaptive Code Evolution](#adaptive-code-evolution)
 - [Why Elixir (and Ash)?](#why-elixir-and-ash)
 - [Roadmap / Future Directions](#roadmap--future-directions)
 - [How to Run Locally](#how-to-run-locally)
@@ -86,6 +87,31 @@ There's also a "Domain Reasoning" Livebook illustrating how to:
 - **Convert** them into Ash-like data structures.  
 - **Add "reasoning steps"** that can be validated or extended by LLM calls.  
 
+### Adaptive Code Evolution
+
+AshSwarm includes an AI-powered adaptive code evolution system that can analyze, optimize, and evaluate Elixir code. The system uses language models to identify optimization opportunities, generate optimized implementations, and evaluate the results.
+
+#### Demo and Stress Testing
+
+Two scripts are provided to demonstrate the adaptive code evolution capabilities:
+
+1. **Demo Script**: Run a simple demonstration of the adaptive code evolution system:
+   ```
+   GROQ_API_KEY=your_api_key_here mix run demo_adaptive_code_evolution.exs
+   ```
+
+2. **Stress Test**: Run a comprehensive stress test that processes multiple complex modules sequentially:
+   ```
+   GROQ_API_KEY=your_api_key_here mix run stress_test_adaptive_code_evolution.exs
+   ```
+
+The stress test includes:
+- Processing of 5 different module types with varying complexity
+- Rate limit handling with automatic retries
+- Detailed performance metrics and success ratings
+
+**Note**: Both scripts require a valid Groq API key set as the `GROQ_API_KEY` environment variable.
+
 ---
 
 ## Why Elixir and Ash?
@@ -99,10 +125,11 @@ There's also a "Domain Reasoning" Livebook illustrating how to:
 
 ## Roadmap / Future Directions
 
-1. **LLM Validation**: Expand "Instructor" code to judge or rank domain changes across multiple "AI experts" (e.g., database vs. ontology vs. Ash).  
-2. **Swarm Intelligence**: Let multiple cheap model calls vote or combine answers, rather than paying for a single expensive LLM pass.  
-3. **Service Colonies & MAPE-K**: Incorporate concepts from the *service colonies* paper and "monitor-analyze-plan-execute" loops for adaptive systems.  
-4. **Deeper Python Interop**: Possibly share domain data between Python and Elixir purely via DSL files or minimal bridging.
+1. **Adaptive Code Evolution**: Implemented - AI-powered system to analyze, optimize, and evaluate Elixir code using language models.
+2. **LLM Validation**: Expand "Instructor" code to judge or rank domain changes across multiple "AI experts" (e.g., database vs. ontology vs. Ash).  
+3. **Swarm Intelligence**: Let multiple cheap model calls vote or combine answers, rather than paying for a single expensive LLM pass.  
+4. **Service Colonies & MAPE-K**: Incorporate concepts from the *service colonies* paper and "monitor-analyze-plan-execute" loops for adaptive systems.  
+5. **Deeper Python Interop**: Possibly share domain data between Python and Elixir purely via DSL files or minimal bridging.
 
 ---
 
@@ -242,4 +269,3 @@ Available Livebooks:
 To stop the servers:
 ```bash
 pkill -f phx.server && pkill -f livebook
-```
