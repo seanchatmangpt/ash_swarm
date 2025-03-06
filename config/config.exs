@@ -16,11 +16,11 @@ config :ash_swarm, Oban,
 config :ash_swarm, Oban,
   repo: AshSwarm.Repo,
   plugins: [
-    # {Oban.Plugins.Cron,
-    #  crontab: [
-    #    {"* * * * *", AshSwarm.Reactors.QASagaJob,
-    #     [args: %{question: "Show me the 25 C4 model diagrams for AGI"}]}
-    #  ]}
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"* * * * *", AshSwarm.Reactors.QASagaJob,
+        [args: %{question: "TOGAF documentation for a Elixir Ash Swarm LLM self modifying system"}]}
+     ]}
   ],
   queues: [default: 10]
 
@@ -97,7 +97,7 @@ config :spark,
 config :ash_swarm,
   ecto_repos: [AshSwarm.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [AshSwarm.Reactors, AshSwarm.Ontology]
+  ash_domains: [AshSwarm.Llm, AshSwarm.Reactors, AshSwarm.Ontology]
 
 # Configures the endpoint
 config :ash_swarm, AshSwarmWeb.Endpoint,

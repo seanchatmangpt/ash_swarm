@@ -270,13 +270,13 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
     * `original_code` - The original code as a string
     * `usage_patterns` - Map or structure containing usage statistics and patterns
     * `options` - Additional options for customization
-    
+
   ## Options
 
     * `:model` - The language model to use (defaults to system configuration)
     * `:optimization_focus` - What aspect to prioritize (e.g., `:performance`, `:readability`)
     * `:constraints` - List of constraints the optimization must adhere to
-    
+
   ## Returns
 
     * `{:ok, result}` - Structured result containing the optimized code and metadata
@@ -385,7 +385,7 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
     * `module` - The module to generate improvements for
     * `usage_data` - Usage statistics and patterns for the module
     * `options` - Additional options for customization
-    
+
   ## Returns
 
     * `{:ok, improvements}` - List of specific improvements that can be applied
@@ -403,11 +403,11 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
             def fibonacci(0), do: 0
             def fibonacci(1), do: 1
             def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)
-            
+
             def bubble_sort(list) do
               do_bubble_sort(list, length(list))
             end
-            
+
             defp do_bubble_sort(list, 0), do: list
             defp do_bubble_sort(list, n) do
               {new_list, _} = Enum.reduce(Enum.with_index(list), {[], false}, fn
@@ -421,7 +421,7 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
                 {x, _}, {acc, swapped} ->
                   {acc ++ [x], swapped}
               end)
-              
+
               do_bubble_sort(new_list, n - 1)
             end
           end
@@ -489,7 +489,7 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
         Usage Context:
         #{usage_context}
 
-        Provide 3-5 specific incremental improvements for this code. 
+        Provide 3-5 specific incremental improvements for this code.
         Focus on practical changes that would be easy to implement with high value.
         """
 
@@ -548,7 +548,7 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
     * `failed_optimization` - The optimization that failed
     * `failure_details` - Information about why the optimization failed
     * `options` - Additional options for customization
-    
+
   ## Returns
 
     * `{:ok, alternatives}` - List of alternative optimization approaches
@@ -674,38 +674,38 @@ defmodule AshSwarm.Foundations.AIAdaptationStrategies do
     end
   end
 
-  @compile {:no_warn_undefined, [{__MODULE__, :process_optimization_result, 2}]}
-  @compile {:no_warn_undefined, [{__MODULE__, :generate_optimization_id, 0}]}
-  @compile {:no_warn_undefined, [{__MODULE__, :get_module_source, 1}]}
-  @doc false
-  # Kept for future use
-  defp process_optimization_result(result, original_code) do
-    # Convert struct to map and add metadata
-    result
-    |> Map.from_struct()
-    |> Map.put(:original_code, original_code)
-    |> Map.put(:timestamp, DateTime.utc_now())
-    |> Map.put(:id, generate_optimization_id())
-  end
+  # @compile {:no_warn_undefined, [{__MODULE__, :process_optimization_result, 2}]}
+  # @compile {:no_warn_undefined, [{__MODULE__, :generate_optimization_id, 0}]}
+  # @compile {:no_warn_undefined, [{__MODULE__, :get_module_source, 1}]}
+  # @doc false
+  # # Kept for future use
+  # defp process_optimization_result(result, original_code) do
+  #   # Convert struct to map and add metadata
+  #   result
+  #   |> Map.from_struct()
+  #   |> Map.put(:original_code, original_code)
+  #   |> Map.put(:timestamp, DateTime.utc_now())
+  #   |> Map.put(:id, generate_optimization_id())
+  # end
 
-  @doc false
+  # @doc false
   # Kept for future use
-  defp generate_optimization_id do
-    UUID.uuid4()
-  end
+  # defp generate_optimization_id do
+  #   UUID.uuid4()
+  # end
 
-  @doc false
+  # @doc false
   # Kept for future use
-  defp get_module_source(module) do
-    """
-    defmodule #{inspect(module)} do
-      # Module source would be here in production
-      def example_function(arg1, arg2) do
-        # Function body
-      end
-    end
-    """
-  end
+  # defp get_module_source(module) do
+  #   """
+  #   defmodule #{inspect(module)} do
+  #     # Module source would be here in production
+  #     def example_function(arg1, arg2) do
+  #       # Function body
+  #     end
+  #   end
+  #   """
+  # end
 
   defp with_retry(max_retries, initial_backoff, func, current_retry \\ 0)
 
