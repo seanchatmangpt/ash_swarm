@@ -7,6 +7,7 @@ This documentation catalogs the advanced patterns implemented or proposed for th
 The patterns are organized into the following categories:
 
 - **Core**: Fully implemented patterns that form the foundation of AshSwarm
+- **Meta**: Higher-order patterns that enable self-modification and evolution
 - **Emerging**: Partially implemented patterns that are in active development
 - **Data**: Patterns focused on data management, aggregation, and storage
 - **Integration**: Patterns for integrating AshSwarm with external systems
@@ -27,6 +28,15 @@ The patterns are organized into the following categories:
 | [Automagic API Designer](./Core/automagic_api_designer.md) | AI-assisted pattern for designing optimal API endpoints |
 | [Self-Modifying Resource](./Core/self_modifying_resource.md) | Resources that can adapt their structure at runtime |
 | [Resource-Driven Living Documentation](./Core/resource_driven_documentation.md) | System to keep documentation in sync with resource definitions |
+
+### Meta Patterns
+
+| Pattern | Status | Description |
+|---------|--------|-------------|
+| [Adaptive Code Evolution](./Meta/adaptive_code_evolution.md) | Implemented | Framework for code to continuously evolve and improve itself |
+| [Mix-Driven Reactor Scaffolding](./Meta/mix_driven_reactor_scaffolding.md) | Implemented | Generating well-structured Reactor workflows through specialized Mix tasks |
+| [Self Evolving Domain](./Meta/self_evolving_domain.md) | Not Implemented | Domain models that intelligently evolve based on usage patterns |
+| [Living Project Pattern](./Meta/living_project_pattern.md) | Not Implemented | Projects that continuously evolve, adapt, and improve themselves |
 
 ### Emerging Patterns (Partially Implemented)
 
