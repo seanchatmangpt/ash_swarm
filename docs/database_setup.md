@@ -6,6 +6,7 @@ This document outlines the steps required to set up the database for the AshSwar
 
 - PostgreSQL 14.x or higher installed
 - Basic knowledge of PostgreSQL administration
+- Groq API key for Adaptive Code Evolution feature
 
 ## Database Configuration Steps
 
@@ -32,6 +33,8 @@ export POSTGRES_USER="ash_user"
 export POSTGRES_PASSWORD="ash_password"
 export POSTGRES_HOST="localhost"
 export POSTGRES_DB="ash_swarm_dev"
+# Add your Groq API key for Adaptive Code Evolution
+export GROQ_API_KEY="your_groq_api_key_here"
 ```
 
 For convenience, you can use the provided scripts:

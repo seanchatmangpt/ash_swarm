@@ -261,6 +261,42 @@ The example module includes a `demo_complete_workflow/2` function that demonstra
 
 This example provides a practical starting point for implementing AI-powered adaptive code evolution in your own applications.
 
+## Testing and Evaluation
+
+AshSwarm provides two key scripts to demonstrate and test the Adaptive Code Evolution Pattern:
+
+### Demo Script
+
+The `demo_adaptive_code_evolution.exs` script provides a simple demonstration of the Adaptive Code Evolution system. It showcases:
+
+1. Analyzing code with the `AICodeAnalysis` module
+2. Generating optimized implementations with the `AIAdaptationStrategies` module
+3. Evaluating the effectiveness of adaptations with the `AIExperimentEvaluation` module
+
+To run the demo:
+
+```bash
+GROQ_API_KEY=your_api_key_here mix run demo_adaptive_code_evolution.exs
+```
+
+### Stress Test Script
+
+The `stress_test_adaptive_code_evolution.exs` script provides a comprehensive stress test for the Adaptive Code Evolution system. This script:
+
+1. Tests the system with 5 different module types of varying complexity
+2. Processes modules sequentially to avoid API rate limits
+3. Implements intelligent retry logic for handling rate limiting
+4. Provides detailed metrics and success ratings for each module
+5. Generates a comprehensive summary of the test results
+
+To run the stress test:
+
+```bash
+GROQ_API_KEY=your_api_key_here mix run stress_test_adaptive_code_evolution.exs
+```
+
+Both scripts require a valid Groq API key to function. If no API key is provided, they will skip the tests with appropriate messages.
+
 ## Implementation Recommendations
 
 To fully implement the AI-enhanced Adaptive Code Evolution Pattern:

@@ -39,6 +39,7 @@ The latest developments in the AshSwarm project include:
 - **CLI-Powered Code Generation** - Automated reactor generation through the `mix reactor.gen.reactor` task
 - **AI-Driven Reasoning** - Business process automation through domain-driven design and workflow orchestration
 - **Solutions Approach** - Shift from application-focused to solution-focused development
+- **Adaptive Code Evolution** - AI-powered system to analyze, optimize, and evaluate Elixir code
 
 ## Recent Additions
 
@@ -77,4 +78,4 @@ Our immediate focus areas include:
 3. **AI-Driven Process Design** - Enhancing business reasoning capabilities (Early Development)
 4. **Solution Methodology** - Developing a structured approach to solution development (Planning)
 
-We operate on an iterative development model, with regular releases delivering incremental improvements. Major feature roadmaps are typically implemented over 3-6 month timeframes. 
+We operate on an iterative development model, with regular releases delivering incremental improvements. Major feature roadmaps are typically implemented over 3-6 month timeframes.
