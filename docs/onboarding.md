@@ -94,6 +94,20 @@ LLM integration happens through:
 - `AshSwarm.InstructorHelper` (`lib/ash_swarm/instructor_helper.ex`)
 - Uses the Instructor library for structured LLM interactions
 
+### 6. Adaptive Code Evolution
+
+Adaptive Code Evolution is a pattern that enables continuous improvement of code based on usage patterns:
+
+- `AshSwarm.Foundations.AICodeAnalysis` (`lib/ash_swarm/foundations/ai_code_analysis.ex`) - Analyzes code to identify opportunities
+- `AshSwarm.Foundations.AIAdaptationStrategies` (`lib/ash_swarm/foundations/ai_adaptation_strategies.ex`) - Generates optimized implementations
+- `AshSwarm.Foundations.AIExperimentEvaluation` (`lib/ash_swarm/foundations/ai_experiment_evaluation.ex`) - Evaluates optimization experiments
+
+You can try the feature using:
+- Demo script: `mix run demo_adaptive_code_evolution.exs`
+- Stress test: `mix run stress_test_adaptive_code_evolution.exs`
+
+Both scripts require a valid Groq API key set in the `GROQ_API_KEY` environment variable.
+
 ## Development Workflow
 
 ### Running the Application

@@ -69,7 +69,22 @@ Provides structured interaction with Large Language Models (LLMs).
 - Provides the `gen/4` function for generating LLM completions
 - Configurable via environment variables for different LLM providers
 
-### 5. Web Interface (Phoenix)
+### 5. Adaptive Code Evolution System
+
+Enables continuous, AI-driven optimization of code based on usage patterns.
+
+**Key Components:**
+- `AshSwarm.Foundations.AICodeAnalysis`: Analyzes code to identify optimization opportunities
+- `AshSwarm.Foundations.AIAdaptationStrategies`: Generates optimized implementations
+- `AshSwarm.Foundations.AIExperimentEvaluation`: Evaluates optimization experiments
+
+**Interactions:**
+- Analyzes usage patterns to identify optimization opportunities
+- Uses LLM integration to generate optimized implementations
+- Evaluates implementations against metrics (performance, maintainability, etc.)
+- Creates a continuous feedback loop for code improvement
+
+### 6. Web Interface (Phoenix)
 
 Provides web interfaces for interacting with the system.
 

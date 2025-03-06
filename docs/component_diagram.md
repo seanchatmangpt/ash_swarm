@@ -11,6 +11,7 @@ graph TB
         DR[Domain Reasoning System]
         Reactors[Reactor System]
         LLM[LLM Integration Layer]
+        ACE[Adaptive Code Evolution]
         Web[Web Interface]
         
         DSL --- DR
@@ -18,6 +19,7 @@ graph TB
         Reactors --- LLM
         Web --- Reactors
         Web --- DR
+        LLM --- ACE
         
         subgraph "Infrastructure"
             DB[(PostgreSQL)]
@@ -235,4 +237,87 @@ sequenceDiagram
     User->>LiveBook: Optional: press Cancel
     LiveBook->>StreamingOrderbot: Cancel stream
     StreamingOrderbot->>OpenAI: Close connection
-``` 
+```
+
+## Adaptive Code Evolution Components
+
+```mermaid
+classDiagram
+    class AICodeAnalysis {
+        +analyze_code(code, options)
+        +identify_optimization_opportunities(code, options)
+    }
+    
+    class AIAdaptationStrategies {
+        +generate_optimized_implementation(original_code, usage_patterns, options)
+    }
+    
+    class AIExperimentEvaluation {
+        +evaluate_experiment(original_code, optimized_code, metrics, options)
+    }
+    
+    class OptimizationResponse {
+        +optimized_code: String
+        +explanation: String
+        +success_rating: Float
+    }
+    
+    class AnalysisResponse {
+        +optimization_opportunities: List
+        +improvement_suggestions: List
+    }
+    
+    class EvaluationResponse {
+        +success_rating: Float
+        +metrics_comparison: Map
+        +recommendations: List
+    }
+    
+    AICodeAnalysis --> AnalysisResponse: produces
+    AIAdaptationStrategies --> OptimizationResponse: produces
+    AIExperimentEvaluation --> EvaluationResponse: produces
+    
+    AICodeAnalysis ..> AIAdaptationStrategies: informs
+    AIAdaptationStrategies ..> AIExperimentEvaluation: feeds into
+    AIExperimentEvaluation ..> AICodeAnalysis: feedback loop
+```
+
+## Domain Reasoning Components
+
+```mermaid
+classDiagram
+    class DomainReasoning {
+        +resources: List
+        +steps: List
+        +final_answer: String
+    }
+    
+    class EctoSchema.DomainReasoning {
+        +resources: List~DomainResource~
+        +steps: List~DomainStep~
+        +final_answer: String
+        +changeset(domain_reasoning, params)
+    }
+    
+    class EctoSchema.DomainResource {
+        +name: String
+        +attributes: List~Map~
+        +relationships: List~Map~
+        +default_actions: List~String~
+        +primary_key: Map
+        +domain: String
+        +extends: List~String~
+        +base: String
+        +timestamps: Boolean
+        +changeset(resource, params)
+    }
+    
+    class EctoSchema.DomainStep {
+        +explanation: String
+        +output: String
+        +changeset(step, params)
+    }
+    
+    DomainReasoning --> EctoSchema.DomainReasoning: maps to
+    EctoSchema.DomainReasoning "1" *-- "many" EctoSchema.DomainResource: contains
+    EctoSchema.DomainReasoning "1" *-- "many" EctoSchema.DomainStep: contains

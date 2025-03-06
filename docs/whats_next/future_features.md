@@ -20,6 +20,14 @@ This document provides a high-level overview of planned features and enhancement
 - **Domain Insights**: Automatic generation of insights from domain models
 - **Schema Evolution**: Tooling to evolve domain models over time with AI assistance
 
+### 3. Adaptive Code Evolution Enhancements
+
+- **Multi-model Support**: Extend beyond Groq to support OpenAI, Anthropic, and other LLM providers
+- **Customizable Metrics**: Allow users to define custom metrics for optimization evaluation
+- **Pipeline Integration**: Integrate with CI/CD pipelines for automated optimization
+- **Historical Analytics**: Track optimization history and performance improvements over time
+- **Language Expansion**: Extend beyond Elixir to other languages like JavaScript, Python, etc.
+
 ## AI Integration Improvements
 
 ### 1. Enhanced LLM Orchestration
@@ -108,4 +116,4 @@ This document provides a high-level overview of planned features and enhancement
 - **Vector Database Integration**: Native integration with vector databases
 - **Webhooks System**: Configurable webhooks for external integration
 - **Event Driven Architecture**: Publish/subscribe patterns for integration
-- **API Gateway**: Expose reactors as RESTful or GraphQL endpoints 
+- **API Gateway**: Expose reactors as RESTful or GraphQL endpoints
