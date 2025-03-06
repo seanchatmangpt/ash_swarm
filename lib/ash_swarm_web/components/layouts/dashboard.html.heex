@@ -11,20 +11,29 @@
     <div class="flex items-center space-x-4">
       <button class="p-2 hover:bg-gray-700 rounded-full">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+          />
         </svg>
       </button>
       <div class="flex items-center space-x-2">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=John" alt="Profile" class="w-8 h-8 rounded-full bg-gray-600" />
+        <img
+          src="https://api.dicebear.com/7.x/avataaars/svg?seed=John"
+          alt="Profile"
+          class="w-8 h-8 rounded-full bg-gray-600"
+        />
         <span class="hidden md:inline">John Doe</span>
       </div>
     </div>
   </header>
 
-<div class="min-h-screen bg-gray-100">
-  <!-- Sidebar Navigation -->
-  <nav class="bg-gray-900 text-gray-300 w-64 p-4 hidden md:block">
-    <%= for {icon, label, path} <- [
+  <div class="min-h-screen bg-gray-100">
+    <!-- Sidebar Navigation -->
+    <nav class="bg-gray-900 text-gray-300 w-64 p-4 hidden md:block">
+      <%= for {icon, label, path} <- [
       {"📊", "Overview", ~p"/dashboard"},
       {"⚡", "Workflows", ~p"/workflows"},
       {"🛍️", "Marketplace", ~p"/marketplace"},
@@ -32,15 +41,18 @@
       {"📈", "Analytics", ~p"/analytics"},
       {"⚙️", "Settings", ~p"/settings"}
     ] do %>
-      <AshSwarmWeb.Components.SharedComponents.sidebar_link icon={icon} label={label} path={path} current_path={@current_path} />
+        <AshSwarmWeb.Components.SharedComponents.sidebar_link
+          icon={icon}
+          label={label}
+          path={path}
+          current_path={@current_path}
+        />
+      <% end %>
+    </nav>
+    
+<!-- Right Panel -->
+    <%= if assigns[:notifications] do %>
+      <AshSwarmWeb.Components.SharedComponents.right_panel notifications={@notifications} />
     <% end %>
-  </nav>
-
-  <!-- Right Panel -->
-  <%= if assigns[:notifications] do %>
-    <AshSwarmWeb.Components.SharedComponents.right_panel notifications={@notifications} />
-  <% end %>
-</div>
-
-  
+  </div>
 </div>

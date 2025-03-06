@@ -3,7 +3,7 @@ defmodule Mix.Tasks.AshSwarm.Gen.Reactor do
 
   @shortdoc "Generate a Reactor module and step modules using Igniter"
   @example """
-  mix reactor.gen.reactor MyApp.CheckoutReactor \\
+  mix ash_swarm.gen.reactor MyApp.CheckoutReactor \\
     --input email:string \\
     -i password:string \\
     --step register_user:MyApp.RegisterUserStep \\
@@ -144,7 +144,7 @@ defmodule Mix.Tasks.AshSwarm.Gen.Reactor do
       use Reactor.Step
 
       @impl true
-      def run(arguments, _context, _options) do
+      def run(_arguments, _context, _options) do
         {:ok, :not_implemented}
       end
       """)

@@ -55,10 +55,10 @@ defmodule AshSwarmWeb.Router do
 
     oban_dashboard("/oban")
 
-      live "/marketplace", MarketplaceLive.Index, :index
-  live "/transactions", TransactionsLive.Index, :index
-  live "/analytics", AnalyticsLive.Index, :index
-  live "/settings", SettingsLive.Index, :index
+    live "/marketplace", MarketplaceLive.Index, :index
+    live "/transactions", TransactionsLive.Index, :index
+    live "/analytics", AnalyticsLive.Index, :index
+    live "/settings", SettingsLive.Index, :index
 
     get "/", PageController, :home
     auth_routes AuthController, AshSwarm.Accounts.User, path: "/auth"

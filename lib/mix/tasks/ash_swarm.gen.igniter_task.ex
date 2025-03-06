@@ -1,9 +1,9 @@
-defmodule Mix.Tasks.AshSwarm.Gen.Mix do
+defmodule Mix.Tasks.AshSwarm.Gen.IgniterTask do
   use Igniter.Mix.Task
 
   @shortdoc "Generate a Mix task module using Igniter"
   @example """
-  mix ash_swarm.gen.mix MyApp.FetchReposTask \\
+  mix ash_swarm.gen.igniter_task Mix.Tasks.MyApp.FetchRepos \\
     --arg username:string \\
     --option language:csv \\
     -o verbose:boolean
@@ -95,6 +95,8 @@ defmodule Mix.Tasks.AshSwarm.Gen.Mix do
       #{shortdoc}
 
       ## Example
+
+      TODO: Update this example with the correct command
 
       ```bash
       #{example_command}

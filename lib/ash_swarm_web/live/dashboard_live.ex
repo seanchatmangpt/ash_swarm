@@ -13,12 +13,10 @@ defmodule AshSwarmWeb.DashboardLive do
     kpis = fetch_kpis() |> update_active_workflows_kpi(workflows)
 
     {:ok,
-      socket
-      |> assign(:workflows, workflows)
-      |> assign(:kpis, kpis)
-      |> assign(:current_path, current_path),
-      layout: {AshSwarmWeb.Layouts, :dashboard}
-    }
+     socket
+     |> assign(:workflows, workflows)
+     |> assign(:kpis, kpis)
+     |> assign(:current_path, current_path), layout: {AshSwarmWeb.Layouts, :dashboard}}
   end
 
   defp fetch_workflows do

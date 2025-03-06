@@ -8,10 +8,12 @@ defmodule AshSwarmWeb.Components.Sidebar do
 
   def sidebar_link(assigns) do
     ~H"""
-    <.link navigate={@path}
-      class={"flex items-center space-x-2 p-2 rounded cursor-pointer hover:bg-gray-800 #{if @current_path == @path, do: "bg-gray-800 text-teal-400"}"}>
-      <span><%= @icon %></span>
-      <span><%= @label %></span>
+    <.link
+      navigate={@path}
+      class={"flex items-center space-x-2 p-2 rounded cursor-pointer hover:bg-gray-800 #{if @current_path == @path, do: "bg-gray-800 text-teal-400"}"}
+    >
+      <span>{@icon}</span>
+      <span>{@label}</span>
     </.link>
     """
   end
