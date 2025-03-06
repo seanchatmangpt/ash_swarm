@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ash_user
+      POSTGRES_PASSWORD: ash_password
+      POSTGRES_DB: ash_swarm_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ash_user -d ash_swarm_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://ash_user:ash_password@db:5432/ash_swarm_dev
+      PHX_HOST: localhost
+      PORT: 4000
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app
+      - build_artifacts:/app/_build
+      - deps_artifacts:/app/deps
+    command: mix phx.server
+    restart: unless-stopped
+    
+  livebook:
+    image: ghcr.io/livebook-dev/livebook:0.11.1
+    depends_on:
+      - web
+    environment:
+      LIVEBOOK_PASSWORD: ash_swarm_password
+      LIVEBOOK_PORT: 4001
+      LIVEBOOK_SECRET_KEY_BASE: d894b2ccd28fadf9e1c7f8f16e42b3b75ef8e0aedf2e0c15ef5b192c91f47431
+      LIVEBOOK_COOKIE: 6f48517e4c786e4f2a84fd29fa9fb6d7
+      # Connect to the Elixir node running in the web container
+      LIVEBOOK_NODE: livebook@livebook
+      LIVEBOOK_DISTRIBUTION: name
+      # Add GROQ API key from environment if available
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./livebooks:/app/livebooks
+      - ./live_books:/app/live_books
+      - .:/app/ash_swarm
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  build_artifacts:
+  deps_artifacts:

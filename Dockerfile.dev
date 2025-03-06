@@ -1,0 +1,24 @@
+FROM hexpm/elixir:1.14.5-erlang-25.3.2.9-debian-bullseye-20240130-slim
+
+# Install build dependencies
+RUN apt-get update -y && apt-get install -y build-essential git nodejs npm inotify-tools netcat-openbsd \
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# Install Hex and Rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Create app directory and set it as working directory
+WORKDIR /app
+
+# Set environment variables
+ENV MIX_ENV=dev
+ENV ERL_AFLAGS="-kernel shell_history enabled"
+
+# Set the entrypoint to a shell script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+# By default, run the Phoenix server
+CMD ["mix", "phx.server"] 
