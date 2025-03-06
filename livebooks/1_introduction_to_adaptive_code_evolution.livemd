@@ -119,6 +119,42 @@ Adaptive Code Evolution becomes particularly powerful when combined with AI:
 2. **AI-Generated Adaptations**: LLMs can generate optimized implementations based on identified opportunities.
 3. **AI-Evaluated Experiments**: LLMs can assist in evaluating the effectiveness of adaptations.
 
+## Available Scripts
+
+AshSwarm provides two scripts to demonstrate and test the Adaptive Code Evolution feature:
+
+### Demo Script
+
+The [`demo_adaptive_code_evolution.exs`](../demo_adaptive_code_evolution.exs) script demonstrates a simple example of the Adaptive Code Evolution system. It:
+
+1. Takes an original slow implementation of Fibonacci and prime number functions
+2. Analyzes the code to identify optimization opportunities
+3. Generates an optimized version using memoization
+4. Evaluates the optimization results
+
+Running the demo shows the complete cycle of analysis, optimization, and evaluation.
+
+### Stress Test Script
+
+The [`stress_test_adaptive_code_evolution.exs`](../stress_test_adaptive_code_evolution.exs) script provides a comprehensive stress test that:
+
+1. Tests 5 different module types with varying complexity
+2. Implements intelligent retry logic for handling API rate limits
+3. Provides detailed metrics and success ratings for each module
+4. Generates a comprehensive summary of test results
+
+The stress test is designed to evaluate the robustness of the system under load and verify its ability to handle rate limiting and other potential issues.
+
+Both scripts require a valid Groq API key to function:
+
+```bash
+# To run the demo
+GROQ_API_KEY=your_api_key_here mix run demo_adaptive_code_evolution.exs
+
+# To run the stress test
+GROQ_API_KEY=your_api_key_here mix run stress_test_adaptive_code_evolution.exs
+```
+
 ## Next Steps
 
 In the next livebook, we'll explore how to implement Adaptive Code Evolution in Elixir using the AshSwarm framework.
