@@ -1,0 +1,40 @@
+<div class="p-8 bg-gray-900 text-white">
+  <!-- Dashboard Header -->
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <button
+      phx-click="refresh"
+      class="px-4 py-2 bg-teal-500 rounded-lg hover:bg-teal-400 transition"
+    >
+      Refresh Data
+    </button>
+  </div>
+  
+<!-- KPI Overview -->
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+    <%= for kpi <- @kpis do %>
+      <div class="p-6 bg-gray-800 rounded-lg shadow-lg transition hover:scale-105">
+        <h3 class="text-xl font-semibold text-teal-400">{kpi.label}</h3>
+        <p class="text-gray-300 text-2xl font-bold mt-2">{kpi.value}</p>
+        <p class="text-sm text-gray-400 mt-1">
+          Trend: {kpi.trend}
+        </p>
+      </div>
+    <% end %>
+  </div>
+  
+<!-- Workflows Section -->
+  <div class="mt-10">
+    <h2 class="text-2xl font-bold text-white">Active Workflows</h2>
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <%= for workflow <- @workflows do %>
+        <div class="p-6 bg-gray-800 rounded-lg shadow-md">
+          <h3 class="text-xl font-semibold text-teal-400">{workflow.name}</h3>
+          <p class="text-gray-300 mt-2">{workflow.description}</p>
+          <p class="text-gray-400 text-sm mt-2">Status: {workflow.status}</p>
+          <p class="text-gray-400 text-sm">Last Run: {workflow.last_run}</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

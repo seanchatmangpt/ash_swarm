@@ -56,6 +56,14 @@ defmodule AshSwarmWeb do
         layout: {AshSwarmWeb.Layouts, :app}
 
       unquote(html_helpers())
+      unquote(view_helpers())
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      import Phoenix.Component
+      alias AshSwarmWeb.Components.SharedComponents
     end
   end
 
