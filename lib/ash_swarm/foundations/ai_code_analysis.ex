@@ -157,13 +157,13 @@ defmodule AshSwarm.Foundations.AICodeAnalysis do
 
     * `module` - The module to analyze
     * `options` - Additional options for customization
-    
+
   ## Options
 
     * `:model` - The language model to use (defaults to system configuration)
     * `:focus_areas` - List of areas to focus on (e.g., [:performance, :readability])
     * `:max_suggestions` - Maximum number of suggestions to return
-    
+
   ## Returns
 
     * `{:ok, opportunities}` - List of optimization opportunities
@@ -207,7 +207,7 @@ defmodule AshSwarm.Foundations.AICodeAnalysis do
     * `function_name` - The name of the function as an atom
     * `arity` - The arity of the function
     * `options` - Additional options for analysis customization
-    
+
   ## Returns
 
     * `{:ok, optimization_opportunities}` - List of structured optimization suggestions
@@ -442,17 +442,17 @@ defmodule AshSwarm.Foundations.AICodeAnalysis do
     analysis_result
   end
 
-  @compile {:no_warn_undefined, [{__MODULE__, :enrich_opportunities, 1}]}
+  # @compile {:no_warn_undefined, [{__MODULE__, :enrich_opportunities, 1}]}
   @doc false
   # Reserved for future use to enrich opportunities with additional metadata
-  defp enrich_opportunities(opportunities) do
-    Enum.map(opportunities, fn opportunity ->
-      opportunity
-      |> Map.from_struct()
-      |> Map.put(:timestamp, DateTime.utc_now())
-      |> Map.put(:id, generate_opportunity_id())
-    end)
-  end
+  # defp enrich_opportunities(opportunities) do
+  #   Enum.map(opportunities, fn opportunity ->
+  #     opportunity
+  #     |> Map.from_struct()
+  #     |> Map.put(:timestamp, DateTime.utc_now())
+  #     |> Map.put(:id, generate_opportunity_id())
+  #   end)
+  # end
 
   # Generate a unique ID for each opportunity
   defp generate_opportunity_id do

@@ -445,27 +445,25 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     def slice(_response), do: {:error, __MODULE__}
   end
 
-  @compile {:no_warn_undefined, [{__MODULE__, :process_evaluation_result, 4}]}
-  @compile {:no_warn_undefined, [{__MODULE__, :generate_evaluation_id, 0}]}
-  @doc false
+  # @doc false
   # Reserved for future use when processing evaluation results with additional context
-  defp process_evaluation_result(result, original_code, adapted_code, metrics) do
-    # Create a map with evaluation data and metadata
-    %{
-      evaluation: Map.from_struct(result.evaluation),
-      explanation: result.explanation,
-      original_code: original_code,
-      adapted_code: adapted_code,
-      metrics: metrics,
-      timestamp: DateTime.utc_now(),
-      id: generate_evaluation_id()
-    }
-  end
+  # defp process_evaluation_result(result, original_code, adapted_code, metrics) do
+  #   # Create a map with evaluation data and metadata
+  #   %{
+  #     evaluation: Map.from_struct(result.evaluation),
+  #     explanation: result.explanation,
+  #     original_code: original_code,
+  #     adapted_code: adapted_code,
+  #     metrics: metrics,
+  #     timestamp: DateTime.utc_now(),
+  #     id: generate_evaluation_id()
+  #   }
+  # end
 
-  @doc false
-  defp generate_evaluation_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
-  end
+  #  @doc false
+  # defp generate_evaluation_id do
+  #   Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+  # end
 
   @doc false
   # Process the analysis result and add metadata
@@ -660,7 +658,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     * `original_code` - The original code before adaptation
     * `adapted_code` - The code after adaptation
     * `options` - Additional options for analysis customization
-    
+
   ## Returns
 
     * `{:ok, analysis}` - Detailed analysis of the differences
@@ -727,7 +725,7 @@ defmodule AshSwarm.Foundations.AIExperimentEvaluation do
     * `adaptations` - Map of adaptation name to adapted code
     * `metrics` - Map of adaptation name to performance metrics
     * `options` - Additional options for evaluation
-    
+
   ## Returns
 
     * `{:ok, ranking}` - Ranked list of adaptations with scores and explanations
