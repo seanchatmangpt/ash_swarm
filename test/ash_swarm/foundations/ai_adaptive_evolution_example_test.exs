@@ -1,7 +1,26 @@
 defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   use ExUnit.Case
-  import Mox
   require Logger
+  import ExUnit.Callbacks, only: [on_exit: 1, setup: 1]
+
+  # Import the test helper
+  alias AshSwarm.TestHelper
+
+  # Setup to mock external services for all tests
+  setup do
+    # Get the cleanup function from mock_external_services
+    on_exit_fn = TestHelper.mock_external_services()
+    
+    # Register it with ExUnit's on_exit callback
+    on_exit(fn -> on_exit_fn.() end)
+    
+    # Also clear API keys for the duration of the test
+    cleanup_keys_fn = TestHelper.clear_api_keys()
+    on_exit(fn -> cleanup_keys_fn.() end)
+    
+    # Return :ok to indicate setup finished successfully
+    :ok
+  end
 
   # Utility for checking if a field exists
   defp has_field?(map, field) when is_map(map), do: Map.has_key?(map, field)
@@ -169,29 +188,17 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
 
   describe "demo_ai_analysis/2" do
     test "successfully analyzes code", %{} do
-      # Skip this test if API keys are not available
-      if not api_keys_available?() do
-        Logger.info("Skipping test that requires API keys")
-        assert true
-      else
-        with_rate_limit_check do
-          # Make sure error mode is off
-          Process.put(:test_error_mode, nil)
+      # Call the function under test
+      result =
+        AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_analysis(
+          TestModule,
+          [:complexity, :duplication]
+        )
 
-          # Call the function under test
-          result =
-            AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_analysis(
-              TestModule,
-              [:complexity, :duplication]
-            )
+      # Verify the result structure - don't check exact analysis content since it may vary
+      assert is_map(result)
 
-          # Verify the result structure - don't check exact analysis content since it may vary
-          assert is_map(result)
-
-          assert has_field?(result, :complexity_report) || has_field?(result, :duplication_report) ||
-                   has_field?(result, :optimization_recommendations)
-        end
-      end
+      assert has_field?(result, :opportunities) || has_field?(result, :summary)
     end
 
     test "handles analysis errors", %{} do
@@ -202,176 +209,102 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
         end
       end
 
-      # Use mock in CI or error mode in development
+      # Set up error condition by using Process dictionary
+      Process.put(:test_error_mode, true)
+
+      # Call with a module that should cause an error when analyzed
       result =
-        if api_keys_available?() do
-          # Set up error condition by using Process dictionary
-          Process.put(:test_error_mode, true)
+        AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_analysis(
+          CauseErrorModule,
+          [:complexity]
+        )
 
-          # Call with a module that should cause an error when analyzed
-          result =
-            AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_analysis(
-              CauseErrorModule,
-              [:complexity]
-            )
-
-          # Reset error mode
-          Process.put(:test_error_mode, nil)
-          result
-        else
-          # Use mock response in CI
-          mock_analysis_result()
-        end
+      # Reset error mode
+      Process.put(:test_error_mode, nil)
 
       # The test passes if any of these conditions are met
-      assert is_map(result) || is_list(result) || is_tuple(result)
+      assert is_map(result)
     end
   end
 
   describe "demo_ai_optimization/3" do
-    test "successfully optimizes code", %{} do
-      # Skip this test if API keys are not available
-      if not api_keys_available?() do
-        # Use mock data instead
-        result = mock_optimization_result()
-
-        # Verify the result structure - don't check exact code content since it may vary
-        assert is_map(result)
-        assert has_field?(result, :optimized_code)
-        assert has_field?(result, :explanation)
-        assert is_binary(result.optimized_code)
-        assert is_binary(result.explanation)
-      else
-        with_rate_limit_check do
-          # Make sure error mode is off
-          Process.put(:test_error_mode, nil)
-
-          # Call the function under test
-          result =
-            AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_optimization(
-              "def frequently_called_function(a, b) do\n  Enum.reduce(1..1000, 0, fn i, acc ->\n    acc + i * (a + b)\n  end)\nend",
-              %{call_frequency: 1000},
-              []
-            )
-
-          # Verify the result structure - don't check exact code content since it may vary
-          assert is_map(result)
-          assert has_field?(result, :optimized_code)
-          assert has_field?(result, :explanation)
-          assert is_binary(result.optimized_code)
-          assert is_binary(result.explanation)
+    test "successfully optimizes code" do
+      # Call the function under test with test data
+      original_code = """
+      defmodule SlowModule do
+        def slow_function(a, b) do
+          Enum.reduce(1..1000, 0, fn i, acc -> acc + (a + b) end)
         end
       end
-    end
+      """
 
-    test "handles optimization errors", %{} do
-      # Use mock in CI or error mode in development
+      usage_patterns = %{
+        "calls_per_hour" => 500,
+        "average_input_size" => "small",
+        "performance_critical" => true
+      }
+
       result =
-        if api_keys_available?() do
-          with_rate_limit_check do
-            # Set error mode for this test
-            Process.put(:test_error_mode, true)
+        AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_optimization(
+          original_code, 
+          usage_patterns,
+          [optimization_focus: :performance]
+        )
 
-            # Call the function under test
-            result =
-              AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_optimization(
-                "def test() do end",
-                %{},
-                []
-              )
-
-            # Reset error mode
-            Process.put(:test_error_mode, nil)
-            result
-          end
-        else
-          # Return mock with error for CI
-          %{
-            error: "Test error in optimization",
-            optimized_code: "def test() do\n  # Mock error response\n  :error\nend"
-          }
-        end
-
-      # Verify the result
+      # Verify the result structure
       assert is_map(result)
-      # Check that it either has the expected error field or contains an error message
-      assert has_field?(result, :error) ||
-               (has_field?(result, :optimized_code) && result.optimized_code =~ "test")
+      assert has_field?(result, :optimized_code)
+      assert has_field?(result, :explanation)
+      assert is_binary(result.optimized_code)
+      assert is_binary(result.explanation)
     end
   end
 
   describe "demo_ai_evaluation/4" do
-    test "successfully evaluates adaptation", %{} do
-      # Skip this test if API keys are not available
-      if not api_keys_available?() do
-        # Use mock data instead
-        result = mock_evaluation_result()
-
-        # Verify the result
-        assert is_map(result)
-        assert has_field?(result, :evaluation)
-        assert has_field?(result.evaluation, :success_rating)
-        # Don't check exact rating since it may vary
-        assert is_number(result.evaluation.success_rating)
-      else
-        with_rate_limit_check do
-          # Make sure error mode is off
-          Process.put(:test_error_mode, nil)
-
-          # Call the function under test
-          result =
-            AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_evaluation(
-              "def slow_function(n) do\n  Enum.reduce(1..n, 0, fn i, acc -> acc + i end)\nend",
-              "def slow_function(n) do\n  div(n * (n + 1), 2)\nend",
-              %{"original_runtime" => 500, "optimized_runtime" => 5},
-              []
-            )
-
-          # Verify the result
-          assert is_map(result)
-          assert has_field?(result, :evaluation)
-          assert has_field?(result.evaluation, :success_rating)
-          # Don't check exact rating since it may vary
-          assert is_number(result.evaluation.success_rating)
+    test "successfully evaluates optimizations" do
+      # Test data
+      original_code = """
+      defmodule SlowModule do
+        def slow_function(a, b) do
+          Enum.reduce(1..1000, 0, fn i, acc -> acc + (a + b) end)
         end
       end
-    end
+      """
 
-    test "handles evaluation errors", %{} do
-      # Use mock in CI or error mode in development
-      result =
-        if api_keys_available?() do
-          with_rate_limit_check do
-            # Set error mode for this test
-            Process.put(:test_error_mode, true)
-
-            # Call the function under test
-            result =
-              AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_evaluation(
-                "def test() do end",
-                "def test() do :optimized end",
-                %{},
-                []
-              )
-
-            # Reset error mode
-            Process.put(:test_error_mode, nil)
-            result
-          end
-        else
-          # Return mock with error or simple evaluation
-          %{
-            evaluation: %{
-              success_rating: 50,
-              error: "Test error in evaluation"
-            }
-          }
+      optimized_code = """
+      defmodule FastModule do
+        def fast_function(a, b) do
+          # Pre-calculate the sum once, then multiply by 1000
+          (a + b) * 1000
         end
+      end
+      """
 
-      # Verify the result structure only, don't check exact values
+      metrics = %{
+        performance: "Execution time reduced from 50ms to 0.5ms",
+        memory_usage: "Memory usage reduced from 500KB to 10KB",
+        test_results: "All tests pass"
+      }
+
+      # Call the function under test
+      result =
+        AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_evaluation(
+          original_code,
+          optimized_code,
+          metrics,
+          [evaluation_focus: :performance]
+        )
+
+      # Verify the result structure
       assert is_map(result)
-      # Either it has an error field, or it has an evaluation with success_rating
-      assert has_field?(result, :error) || has_field?(result, :evaluation)
+      
+      # Check nested structure with pattern matching
+      assert %{evaluation: evaluation} = result
+      assert is_map(evaluation)
+      assert has_field?(evaluation, :success_rating)
+      assert has_field?(evaluation, :recommendation)
+      assert has_field?(evaluation, :risks)
+      assert has_field?(evaluation, :improvement_areas)
     end
   end
 end

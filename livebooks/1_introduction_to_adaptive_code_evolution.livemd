@@ -11,16 +11,17 @@ In this livebook, we'll explore the core concepts, benefits, and implementation 
 ```elixir
 Mix.install([
   {:kino, "~> 0.12.0"},
-  {:ash_swarm, path: "/app/ash_swarm"},
+  {:ash_swarm, path: "/Users/speed/ash_swarm"},
   {:instructor, "~> 0.1.0"},
   {:jason, "~> 1.4"},
   {:poison, "~> 5.0"},
   {:sourceror, "~> 1.0"},
-  {:git_diff, "~> 0.6.4"}
+  {:git_diff, "~> 0.6.4"},
+  {:heroicons, env: :prod, git: "https://github.com/tailwindlabs/heroicons.git", tag: "v2.1.1", sparse: "optimized", app: false, compile: false, depth: 1, override: true}
 ])
 
 # Ensure the modules are compiled and loaded
-Code.require_file("/app/ash_swarm/lib/ash_swarm/foundations/ai_code_analysis.ex")
+Code.require_file("/Users/speed/ash_swarm/lib/ash_swarm/foundations/ai_code_analysis.ex")
 
 # Set up environment variables for API access
 # Check for API key in environment or in Livebook secrets with LB_ prefix
@@ -51,94 +52,6 @@ alias AshSwarm.Foundations.{
 IO.puts(
   "Livebook environment ready for Adaptive Code Evolution demonstration with AshSwarm modules"
 )
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-==> ash_swarm
-Compiling 4 files (.ex)
-warning: function convert_to_simple_json_schema/1 is unused
-  lib/ash_swarm/instructor_helper.ex:788: AshSwarm.InstructorHelper (module)
-
-warning: Domain AshSwarm.Reactors is not present in
-
-    config :ash_swarm, ash_domains: [].
-
-
-To resolve this warning, do one of the following.
-
-1. Add the domain to your configured domain modules. The following snippet can be used.
-
-    config :ash_swarm, ash_domains: [AshSwarm.Reactors]
-
-2. Add the option `validate_config_inclusion?: false` to `use Ash.Domain`
-
-3. Configure all domains not to warn, with `config :ash, :validate_domain_config_inclusion?, false`
-
-  (ash_swarm 0.1.0) lib/ash_swarm/reactors.ex:1: AshSwarm.Reactors.__verify_spark_dsl__/1
-  (elixir 1.15.6) lib/enum.ex:984: Enum."-each/2-lists^foreach/1-0-"/2
-  (elixir 1.15.6) lib/module/parallel_checker.ex:271: Module.ParallelChecker.check_module/3
-  (elixir 1.15.6) lib/module/parallel_checker.ex:82: anonymous fn/6 in Module.ParallelChecker.spawn/4
-
-warning: function generate_evaluation_id/0 is unused
-  lib/ash_swarm/foundations/ai_experiment_evaluation.ex:466
-
-warning: function process_evaluation_result/4 is unused
-  lib/ash_swarm/foundations/ai_experiment_evaluation.ex:452
-
-warning: function generate_optimization_id/0 is unused
-  lib/ash_swarm/foundations/ai_adaptation_strategies.ex:693
-
-warning: function get_module_source/1 is unused
-  lib/ash_swarm/foundations/ai_adaptation_strategies.ex:699
-
-warning: function process_optimization_result/2 is unused
-  lib/ash_swarm/foundations/ai_adaptation_strategies.ex:682
-
-warning: function enrich_opportunities/1 is unused
-  lib/ash_swarm/foundations/ai_code_analysis.ex:471
-
-warning: Domain AshSwarm.Ontology is not present in
-
-    config :ash_swarm, ash_domains: [].
-
-
-To resolve this warning, do one of the following.
-
-1. Add the domain to your configured domain modules. The following snippet can be used.
-
-    config :ash_swarm, ash_domains: [AshSwarm.Ontology]
-
-2. Add the option `validate_config_inclusion?: false` to `use Ash.Domain`
-
-3. Configure all domains not to warn, with `config :ash, :validate_domain_config_inclusion?, false`
-
-  lib/ash_swarm/ontology.ex:1
-
-
-05:28:47.711 [notice] Application ash_swarm exited: exited in: AshSwarm.Application.start(:normal, [])
-    ** (EXIT) an exception was raised:
-        ** (ArgumentError) could not fetch application environment :ash_domains for application :ash_swarm because configuration at :ash_domains was not set
-            (elixir 1.15.6) lib/application.ex:775: Application.fetch_env!/2
-            (ash_swarm 0.1.0) lib/ash_swarm/application.ex:15: AshSwarm.Application.start/2
-            (kernel 9.1) application_master.erl:293: :application_master.start_it_old/4
-
-05:28:47.715 [notice] Application runtime_tools exited: :stopped
-warning: the Enumerable protocol has already been consolidated, an implementation for AshSwarm.Foundations.AICodeAnalysis.AnalysisResponse has no effect. If you want to implement protocols after compilation or during tests, check the "Consolidation" section in the Protocol module documentation
-  /app/ash_swarm/lib/ash_swarm/foundations/ai_code_analysis.ex:136: AshSwarm.Foundations.AICodeAnalysis (module)
-
-warning: function enrich_opportunities/1 is unused
-  /app/ash_swarm/lib/ash_swarm/foundations/ai_code_analysis.ex:471: AshSwarm.Foundations.AICodeAnalysis (module)
-
-✅ Found GROQ_API_KEY
-Livebook environment ready for Adaptive Code Evolution demonstration with AshSwarm modules
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-:ok
 ```
 
 ### Core Concepts
@@ -191,6 +104,10 @@ analysis_options = [
   max_suggestions: 5
 ]
 
+# Print detailed debug info about the options
+IO.puts("🔍 DEBUG: Analysis options being used:")
+IO.inspect(analysis_options, label: "Options")
+
 # Check if the module and functions exist before trying to use them
 module_exists = Code.ensure_loaded?(AshSwarm.Foundations.AICodeAnalysis)
 
@@ -203,25 +120,40 @@ analysis_result =
   if System.get_env("GROQ_API_KEY") && System.get_env("GROQ_API_KEY") != "" &&
        module_exists && function_exists do
     IO.puts("🔍 Analyzing code using AI-powered code analysis...")
+    
+    # Print API key information (partial for security)
+    api_key = System.get_env("GROQ_API_KEY")
+    key_preview = String.slice(api_key, 0, 4) <> "..." <> String.slice(api_key, -4, 4)
+    IO.puts("🔑 Using API key: #{key_preview}")
 
     try do
       # Call the AICodeAnalysis module with our specific options
-      case AshSwarm.Foundations.AICodeAnalysis.analyze_source_code(
-             sample_code,
-             %{},
-             analysis_options
-           ) do
+      IO.puts("📤 Sending analysis request to AICodeAnalysis module...")
+      response_tuple = AshSwarm.Foundations.AICodeAnalysis.analyze_source_code(
+        sample_code,
+        %{},
+        analysis_options
+      )
+      
+      IO.puts("📥 Got response from AICodeAnalysis:")
+      IO.inspect(response_tuple, label: "Raw Response", limit: :infinity)
+      
+      case response_tuple do
         {:ok, opportunities} ->
           # Handle both possible structures: map with opportunities key or direct list
-          cond do
-            is_map(opportunities) && Map.has_key?(opportunities, :opportunities) ->
+          IO.puts("Received opportunities in format:")
+          IO.inspect(opportunities, label: "Opportunities Format")
+          
+          result = cond do
+            is_map(opportunities) && Map.has_key?(opportunities, :opportunities) && 
+            length(opportunities.opportunities) > 0 ->
               IO.puts(
                 "✅ Successfully analyzed code - found #{length(opportunities.opportunities)} optimization opportunities"
               )
 
               %{opportunities: opportunities.opportunities}
 
-            is_list(opportunities) ->
+            is_list(opportunities) && length(opportunities) > 0 ->
               IO.puts(
                 "✅ Successfully analyzed code - found #{length(opportunities)} optimization opportunities (list format)"
               )
@@ -229,9 +161,35 @@ analysis_result =
               %{opportunities: opportunities}
 
             true ->
-              IO.puts("⚠️ Unexpected result structure: #{inspect(opportunities)}")
-              %{opportunities: normalize_opportunities.(opportunities)}
+              IO.puts("⚠️ No optimization opportunities found. This might be due to an error in parsing the response.")
+              # In this final case, provide a synthetic opportunity for demonstration purposes
+              %{
+                opportunities: [
+                  %{
+                    "id" => "synthetic-fallback",
+                    "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+                    "description" => "Exponential time complexity in recursive Fibonacci implementation",
+                    "type" => "performance",
+                    "location" => "fibonacci/1",
+                    "severity" => "high",
+                    "rationale" => "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
+                    "suggested_change" => """
+                    def fibonacci(n), do: fibonacci_memo(n, %{0 => 0, 1 => 1})
+
+                    defp fibonacci_memo(n, memo) when is_map_key(memo, n), do: Map.get(memo, n)
+                    defp fibonacci_memo(n, memo) do
+                      result = fibonacci_memo(n-1, memo) + fibonacci_memo(n-2, memo)
+                      {result, Map.put(memo, n, result)}
+                    end
+                    """
+                  }
+                ]
+              }
           end
+          
+          IO.puts("Final opportunities result:")
+          IO.inspect(result, label: "Result")
+          result
 
         {:error, reason} ->
           IO.puts("❌ Error analyzing code: #{inspect(reason)}")
@@ -239,13 +197,14 @@ analysis_result =
           %{
             opportunities: [
               %{
-                description: "Exponential time complexity in recursive Fibonacci implementation",
-                type: "performance",
-                location: "fibonacci/1",
-                severity: "high",
-                rationale:
-                  "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
-                suggested_change: """
+                "id" => "synthetic-error",
+                "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+                "description" => "Exponential time complexity in recursive Fibonacci implementation",
+                "type" => "performance",
+                "location" => "fibonacci/1",
+                "severity" => "high",
+                "rationale" => "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
+                "suggested_change" => """
                 def fibonacci(n), do: fibonacci_memo(n, %{0 => 0, 1 => 1})
 
                 defp fibonacci_memo(n, memo) when is_map_key(memo, n), do: Map.get(memo, n)
@@ -262,49 +221,35 @@ analysis_result =
     rescue
       e ->
         IO.puts("❌ Exception when calling AICodeAnalysis: #{Exception.message(e)}")
+        IO.puts("🔍 Full error information:")
+        IO.inspect(e, label: "Exception")
+        IO.puts("🔍 Stacktrace:")
+        IO.inspect(System.stacktrace(), label: "Stacktrace", limit: 5)
 
-        # Try to extract data from the error message
-        if String.contains?(Exception.message(e), "key :opportunities not found in:") do
-          # Parse the opportunities list from the error message
-          opportunities_str =
-            Regex.run(~r/key :opportunities not found in: (\[.*\])/s, Exception.message(e))
-            |> Enum.at(1)
+        # Provide comprehensive fallback with detailed error handling
+        %{
+          opportunities: [
+            %{
+              "id" => "synthetic-exception",
+              "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+              "description" => "Exponential time complexity in recursive Fibonacci implementation",
+              "type" => "performance", 
+              "location" => "fibonacci/1",
+              "severity" => "high",
+              "rationale" => "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
+              "suggested_change" => """
+              def fibonacci(n), do: fibonacci_memo(n, %{0 => 0, 1 => 1})
 
-          opportunities =
-            try do
-              {opportunities, _} = Code.eval_string(opportunities_str)
-              opportunities
-            rescue
-              _ -> []
-            end
-
-          IO.puts("🔧 Recovered #{length(opportunities)} opportunities from error message")
-          %{opportunities: opportunities}
-        else
-          # Use fallback example
-          %{
-            opportunities: [
-              %{
-                description: "Exponential time complexity in recursive Fibonacci implementation",
-                type: "performance",
-                location: "fibonacci/1",
-                severity: "high",
-                rationale:
-                  "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
-                suggested_change: """
-                def fibonacci(n), do: fibonacci_memo(n, %{0 => 0, 1 => 1})
-
-                defp fibonacci_memo(n, memo) when is_map_key(memo, n), do: Map.get(memo, n)
-                defp fibonacci_memo(n, memo) do
-                  result = fibonacci_memo(n-1, memo) + fibonacci_memo(n-2, memo)
-                  Map.put(memo, n, result)
-                  result
-                end
-                """
-              }
-            ]
-          }
-        end
+              defp fibonacci_memo(n, memo) when is_map_key(memo, n), do: Map.get(memo, n)
+              defp fibonacci_memo(n, memo) do
+                result = fibonacci_memo(n-1, memo) + fibonacci_memo(n-2, memo)
+                Map.put(memo, n, result)
+                result
+              end
+              """
+            }
+          ]
+        }
     end
   else
     # Handle various error conditions
@@ -323,13 +268,14 @@ analysis_result =
     %{
       opportunities: [
         %{
-          description: "Exponential time complexity in recursive Fibonacci implementation",
-          type: "performance",
-          location: "fibonacci/1",
-          severity: "high",
-          rationale:
-            "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
-          suggested_change: """
+          "id" => "synthetic-nomodule",
+          "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+          "description" => "Exponential time complexity in recursive Fibonacci implementation",
+          "type" => "performance",
+          "location" => "fibonacci/1",
+          "severity" => "high",
+          "rationale" => "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.",
+          "suggested_change" => """
           def fibonacci(n), do: fibonacci_memo(n, %{0 => 0, 1 => 1})
 
           defp fibonacci_memo(n, memo) when is_map_key(memo, n), do: Map.get(memo, n)
@@ -349,11 +295,11 @@ opportunities = analysis_result.opportunities
 
 rows =
   for opportunity <- opportunities do
-    description = Map.get(opportunity, :description, "")
-    type = Map.get(opportunity, :type, "")
-    location = Map.get(opportunity, :location, "")
-    severity = Map.get(opportunity, :severity, "")
-    rationale = Map.get(opportunity, :rationale, "")
+    description = Map.get(opportunity, :description, "") || Map.get(opportunity, "description", "")
+    type = Map.get(opportunity, :type, "") || Map.get(opportunity, "type", "")
+    location = Map.get(opportunity, :location, "") || Map.get(opportunity, "location", "")
+    severity = Map.get(opportunity, :severity, "") || Map.get(opportunity, "severity", "")
+    rationale = Map.get(opportunity, :rationale, "") || Map.get(opportunity, "rationale", "")
 
     # Format the table row
     "| #{location} | #{description} | #{type} | #{severity} | #{String.slice(rationale, 0, 100)}#{if String.length(rationale) > 100, do: "...", else: ""} |"
@@ -362,8 +308,8 @@ rows =
 # Display the suggested changes separately for better readability
 code_blocks =
   for {opportunity, index} <- Enum.with_index(opportunities) do
-    suggested_change = Map.get(opportunity, :suggested_change, "")
-    description = Map.get(opportunity, :description, "")
+    suggested_change = Map.get(opportunity, :suggested_change, "") || Map.get(opportunity, "suggested_change", "")
+    description = Map.get(opportunity, :description, "") || Map.get(opportunity, "description", "")
 
     """
     #### Optimization #{index + 1}: #{description}
@@ -396,30 +342,11 @@ The analysis identified #{length(opportunities)} optimization opportunities:
 Kino.Markdown.new(markdown)
 ````
 
-<!-- livebook:{"output":true} -->
-
-```
-🔍 Analyzing code using AI-powered code analysis...
-
-05:48:31.178 [debug] [DEBUG] Using model: llama3-70b-8192
-
-05:48:31.179 [debug] [DEBUG] Client type: groq
-
-05:48:31.180 [debug] [DEBUG] Response model: %{opportunities: [], summary: ""}
-
-05:48:31.180 [debug] Groq Request URL: https://api.groq.com/openai/v1/chat/completions
-
-05:48:34.640 [debug] Trying to extract optimization data from raw text response
-
-05:48:34.640 [debug] Creating synthetic opportunity from text response
-✅ Successfully analyzed code - found 1 optimization opportunities (list format)
-```
-
 #### 2. Adaptation Strategies
 
 Once optimization opportunities are identified, the system must determine how to adapt the code to improve it. This involves generating new implementations that maintain functionality while enhancing performance, maintainability, or other desired qualities.
 
-````elixir
+```elixir
 # Original code to be optimized
 original_code = """
 defmodule SlowOperations do
@@ -610,38 +537,23 @@ optimized_code = Map.get(optimization_result, :optimized_code, "")
 Kino.Markdown.new("""
 ### Original Implementation
 
-```elixir
+```
+
 #{original_code}
+
 ```
 
 ### Optimized Implementation
 
-```elixir
+```
+
 #{optimized_code}
+
 ```
 
 The optimized implementation uses memoization to store previously calculated Fibonacci numbers,
 reducing the time complexity from O(2^n) to O(n).
 """)
-````
-
-<!-- livebook:{"output":true} -->
-
-```
-Attempting to generate optimized implementation using AIAdaptationStrategies...
-
-06:20:32.445 [debug] [DEBUG] Using model: llama3-70b-8192
-
-06:20:32.446 [debug] [DEBUG] Client type: groq
-
-06:20:32.446 [debug] [DEBUG] Response model: %{documentation: "", optimized_code: "", explanation: "", expected_improvements: %{performance: "", maintainability: "", safety: ""}}
-
-06:20:32.446 [debug] Groq Request URL: https://api.groq.com/openai/v1/chat/completions
-
-06:20:34.367 [debug] Trying to extract optimization data from raw text response
-
-06:20:34.367 [debug] Trying to extract optimization data from raw text response
-Successfully generated optimized implementation using AIAdaptationStrategies
 ```
 
 #### 3. Experiment Evaluation
@@ -802,15 +714,9 @@ With this module defined, you could use it like:
 
 ```
 
-## Analyze code using the AI analyzer
-
 MyApp.CustomAdaptiveEvolution.analyze_with_ai(:code_quality, sample_module_code)
 
-## Generate optimized implementation
-
 MyApp.CustomAdaptiveEvolution.adapt_with_ai(:performance_optimization, sample_module_code, usage_data)
-
-## Evaluate an experiment
 
 MyApp.CustomAdaptiveEvolution.evaluate_with_ai(:impact_assessment, original_code, optimized_code, metrics)
 
@@ -1223,716 +1129,6 @@ The optimized implementation shows significant improvements across all dimension
 """)
 ```
 
-<!-- livebook:{"output":true} -->
-
-```
-Attempting to evaluate experiment using AIExperimentEvaluation...
-
-06:43:11.726 [debug] Calling InstructorHelper for evaluation
-
-06:43:11.726 [debug] [DEBUG] Using model: llama3-70b-8192
-
-06:43:11.726 [debug] [DEBUG] Client type: groq
-
-06:43:11.727 [debug] [DEBUG] Response model: %AshSwarm.Foundations.AIExperimentEvaluation.EvaluationResponse{evaluation: nil, explanation: ""}
-
-06:43:11.727 [debug] Groq Request URL: https://api.groq.com/openai/v1/chat/completions
-
-06:43:13.280 [debug] Trying to extract optimization data from raw text response
-Successfully evaluated experiment using AIExperimentEvaluation
-Unknown result format, using adaptive conversion
-Actual result structure: %{
-  id: "8b3f7c55-2745-415b-9e55-1210ad16ad65",
-  timestamp: ~U[2025-03-06 06:43:13.281277Z],
-  metrics: %{
-    "maintainability" => %{
-      "complexity_score_optimized" => 5,
-      "complexity_score_original" => 8,
-      "lines_of_code_optimized" => 24,
-      "lines_of_code_original" => 5
-    },
-    "performance" => %{
-      "memory_optimized_mb" => 15,
-      "memory_original_mb" => 150,
-      "optimized_time_ms" => 10,
-      "original_time_ms" => 2500
-    },
-    "safety" => %{
-      "edge_cases_handled_optimized" => 4,
-      "edge_cases_handled_original" => 2
-    }
-  },
-  original_code: "defmodule SlowOperations do\n  def fibonacci(0), do: 0\n  def fibonacci(1), do: 1\n  def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)\nend\n",
-  adapted_code: "defmodule OptimizedOperations do\n  @moduledoc \"\"\"\n  Provides optimized implementations of common algorithms.\n  \"\"\"\n\n  @doc \"\"\"\n  Calculates the nth Fibonacci number using memoization.\n  This implementation has linear time complexity.\n\n  ## Examples\n\n      iex> OptimizedOperations.fibonacci(10)\n      55\n\n  \"\"\"\n  def fibonacci(n) when is_integer(n) and n >= 0 do\n    {result, _} = fibonacci_with_cache(n, %{0 => 0, 1 => 1})\n    result\n  end\n\n  defp fibonacci_with_cache(n, cache) do\n    case Map.get(cache, n) do\n      nil ->\n        {n1, cache1} = fibonacci_with_cache(n - 1, cache)\n        {n2, cache2} = fibonacci_with_cache(n - 2, cache1)\n        result = n1 + n2\n        {result, Map.put(cache2, n, result)}\n      cached_value ->\n        {cached_value, cache}\n    end\n  end\nend\n",
-  evaluation: %AshSwarm.Foundations.AIExperimentEvaluation.Evaluation{
-    success_rating: 0.8,
-    recommendation: "Apply with Caution**",
-    risks: ["**Lack of metrics**: Without concrete performance, memory usage, and test results, it is challenging to quantify the optimization's impact.",
-     "**Unverified assumptions**: The optimization assumes that memoization will significantly improve performance, but this has not been empirically proven.",
-     "**Potential cache size issues**: If the cache grows too large, it may lead to memory issues, which could negate the performance benefits."],
-    improvement_areas: ["No specific improvement areas identified"]
-  },
-  explanation: "**Evaluation Report**\n\n**Success Rating: 0.8**\n\nAlthough the optimization experiment lacks concrete metrics, the optimized code implementation demonstrates a clear understanding of the problem and a well-structured approach to improving performance. The use of memoization to reduce redundant calculations is a suitable optimization technique for the Fibonacci sequence.\n\n**Recommendation: Apply with Caution**\n\nWhile the optimized code appears to be an improvement over the original implementation, the lack of concrete metrics and test results makes it difficult to fully assess the optimization's effectiveness. It is recommended to apply the optimization, but with caution, and to closely monitor its performance in a production environment.\n\n**Key Risks:**\n\n1. **Lack of metrics**: Without concrete performance, memory usage, and test results, it is challenging to quantify the optimization's impact.\n2. **Unverified assumptions**: The optimization assumes that memoization will significantly improve performance, but this has not been empirically proven.\n3. **Potential cache size issues**: If the cache grows too large, it may lead to memory issues, which could negate the performance benefits.\n\n**Improvement Areas:**\n\n1. **Collect and report metrics**: Gather concrete performance, memory usage, and test results to quantify the optimization's effectiveness.\n2. **Conduct thorough testing**: Perform comprehensive testing to ensure the optimized code behaves correctly and handles edge cases.\n3. **Consider alternative optimizations**: Explore other optimization techniques, such as iterative approaches or parallel processing, to further improve performance.\n4. **Monitor and refine**: Continuously monitor the optimized code's performance in production and refine the implementation as needed.\n\nBy addressing these areas, the optimization experiment can be further improved, and the success rating can be increased."
-}
-```
-
-### Integration with AI
-
-Adaptive Code Evolution becomes particularly powerful when combined with artificial intelligence:
-
-```elixir
-ai_integration = [
-  %{
-    capability: "AI-Powered Analysis",
-    description:
-      "LLMs can analyze code structure, identify anti-patterns, and suggest optimizations",
-    tools: "Static analysis tools, AST parsing, semantic understanding",
-    examples: "Identifying redundant calculations, inefficient data structures, resource leaks"
-  },
-  %{
-    capability: "AI-Generated Adaptations",
-    description: "LLMs can generate optimized implementations based on identified opportunities",
-    tools: "Code generation, pattern recognition, language-specific optimization techniques",
-    examples:
-      "Implementing memoization, replacing inefficient algorithms, refactoring for clarity"
-  },
-  %{
-    capability: "AI-Evaluated Experiments",
-    description: "LLMs can evaluate optimization effectiveness across multiple dimensions",
-    tools: "Benchmarking, code quality metrics, semantic comparison",
-    examples:
-      "Comparing performance metrics, assessing maintainability improvements, validating correctness"
-  },
-  %{
-    capability: "AI-Enhanced Learning",
-    description:
-      "LLMs can recognize patterns across adaptations and develop new optimization strategies",
-    tools: "Pattern recognition, meta-learning, adaptation catalogs",
-    examples:
-      "Discovering novel optimization techniques, cross-applying successful patterns, predicting optimization impact"
-  }
-]
-
-# Create a Markdown table of AI integration points
-ai_rows =
-  for ai <- ai_integration do
-    "| #{ai.capability} | #{ai.description} | #{ai.examples} |"
-  end
-
-ai_markdown = """
-### AI Integration Points
-
-| Capability | Description | Examples |
-| ---------- | ----------- | -------- |
-#{Enum.join(ai_rows, "\n")}
-"""
-
-Kino.Markdown.new(ai_markdown)
-```
-
-### Available Scripts
-
-AshSwarm provides two scripts to demonstrate and test the Adaptive Code Evolution feature:
-
-````elixir
-# Display script information
-Kino.Markdown.new("""
-### Demo Script
-
-The [`demo_adaptive_code_evolution.exs`](../demo_adaptive_code_evolution.exs) script demonstrates a simple example of the Adaptive Code Evolution system. It:
-
-1. Takes an original slow implementation of Fibonacci and prime number functions
-2. Analyzes the code to identify optimization opportunities
-3. Generates an optimized version using memoization
-4. Evaluates the optimization results
-
-Running the demo shows the complete cycle of analysis, optimization, and evaluation.
-
-### Stress Test Script
-
-The [`stress_test_adaptive_code_evolution.exs`](../stress_test_adaptive_code_evolution.exs) script provides a comprehensive stress test that:
-
-1. Tests 5 different module types with varying complexity
-2. Implements intelligent retry logic for handling API rate limits
-3. Provides detailed metrics and success ratings for each module
-4. Generates a comprehensive summary of test results
-
-The stress test is designed to evaluate the robustness of the system under load and verify its ability to handle rate limiting and other potential issues.
-
-### Running in Livebook
-
-Both scripts require a valid Groq API key to function. In Livebook, we access this through environment variables or Livebook secrets:
-
-```elixir
-# Access the Groq API key from environment or Livebook secrets
-api_key = System.get_env("GROQ_API_KEY") || System.get_env("LB_GROQ_API_KEY")
-
-if is_nil(api_key) or api_key == "" do
-  IO.puts("⚠️ No GROQ_API_KEY found in environment or Livebook secrets. Some examples may not work.")
-  IO.puts("To set an API key, add a secret named 'LB_GROQ_API_KEY' in the Secrets section of your Livebook.")
-else
-  # Set the API key in the environment so other functions can access it
-  System.put_env("GROQ_API_KEY", api_key)
-  IO.puts("✅ Found GROQ_API_KEY")
-end
-```
-
-To set up this secret in your Livebook:
-1. Click on the key icon (🔑) in the sidebar
-2. Add a new secret with name `LB_GROQ_API_KEY` (note the `LB_` prefix)
-3. Paste your Groq API key as the value
-4. Click 'Add'
-
-Your secret will then be securely available to the code via `System.get_env("LB_GROQ_API_KEY")`.
-""")
-````
-
-## To run the demo
-
-```elixir
-# Run a simplified Adaptive Code Evolution demo directly in Livebook
-
-# Ensure we have the API key
-api_key = System.get_env("GROQ_API_KEY") || System.get_env("LB_GROQ_API_KEY")
-
-if is_nil(api_key) or api_key == "" do
-  raise "⚠️ No GROQ_API_KEY found in environment or Livebook secrets. Please set the API key first."
-else
-  System.put_env("GROQ_API_KEY", api_key)
-  IO.puts("✅ Found GROQ_API_KEY\n")
-end
-
-IO.puts("🚀 Running inline Adaptive Code Evolution demo...\n")
-
-# Define a sample module with inefficient code
-original_code = """
-defmodule SlowOperations do
-  @moduledoc \"\"\"
-  Module containing inefficient implementations of common algorithms.
-  \"\"\"
-
-  @doc \"\"\"
-  Calculates the nth Fibonacci number using naive recursion.
-  This implementation has exponential time complexity.
-  \"\"\"
-  def fibonacci(0), do: 0
-  def fibonacci(1), do: 1
-  def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)
-
-  @doc \"\"\"
-  Determines if a number is prime using a naive implementation.
-  \"\"\"
-  def is_prime?(n) when n <= 1, do: false
-  def is_prime?(2), do: true
-  def is_prime?(n) do
-    2..floor(:math.sqrt(n))
-    |> Enum.any?(fn i -> rem(n, i) == 0 end)
-    |> Kernel.not()
-  end
-end
-"""
-
-IO.puts("1️⃣ Original code to analyze:")
-IO.puts(original_code)
-IO.puts("\n")
-
-# Step 1: Analyze the code for optimization opportunities
-IO.puts("2️⃣ Analyzing code for optimization opportunities...")
-
-{analysis_status, analysis_result} =
-  try do
-    AshSwarm.Foundations.AICodeAnalysis.analyze_source_code(original_code, %{
-      focus_areas: ["performance", "readability", "maintainability"]
-    })
-  rescue
-    e ->
-      IO.puts("Error during analysis: #{inspect(e)}")
-      {:error, "Analysis failed: #{inspect(e)}"}
-  end
-
-if analysis_status == :ok do
-  IO.puts("✅ Analysis complete!\n")
-
-  # Display opportunities
-  if is_map(analysis_result) && Map.has_key?(analysis_result, :opportunities) do
-    opportunities = analysis_result.opportunities
-
-    if length(opportunities) > 0 do
-      IO.puts("Found #{length(opportunities)} optimization opportunities:")
-
-      Enum.each(opportunities, fn opp ->
-        IO.puts("- #{opp.description} (#{opp.type}, severity: #{opp.severity})")
-      end)
-    else
-      IO.puts("No optimization opportunities found.")
-    end
-  else
-    IO.puts("Analysis result has unexpected format: #{inspect(analysis_result)}")
-  end
-else
-  IO.puts("⚠️ Analysis returned an error: #{inspect(analysis_result)}")
-
-  # Create fallback analysis for demo purposes
-  opportunities = [
-    %{
-      location: "fibonacci/1",
-      description: "Inefficient recursive implementation with exponential time complexity",
-      type: "performance",
-      severity: "high",
-      rationale:
-        "The naive recursive implementation recalculates the same Fibonacci values repeatedly, leading to exponential time complexity O(2^n)."
-    }
-  ]
-
-  IO.puts("Using fallback analysis data for demonstration")
-end
-
-# Step 2: Generate optimized implementation
-IO.puts("\n3️⃣ Generating optimized implementation...")
-
-optimization_response =
-  try do
-    case AshSwarm.Foundations.AIAdaptationStrategies.generate_optimized_implementation(
-           original_code,
-           %{}
-         ) do
-      {:ok, result} ->
-        result
-
-      {:error, reason} ->
-        IO.puts("⚠️ Optimization generation error: #{inspect(reason)}")
-        nil
-    end
-  rescue
-    e ->
-      IO.puts("Error during optimization generation: #{inspect(e)}")
-      nil
-  end
-
-# Extract the optimized code from the response, or use fallback
-optimized_code =
-  if optimization_response != nil && is_struct(optimization_response) &&
-       Map.has_key?(optimization_response, :optimized_code) do
-    optimization_response.optimized_code
-  else
-    # Fallback optimized implementation
-    """
-    defmodule OptimizedOperations do
-      @moduledoc \"\"\"
-      Module containing optimized implementations of common algorithms.
-      \"\"\"
-
-      @doc \"\"\"
-      Calculates the nth Fibonacci number using memoization.
-      This implementation has linear time complexity.
-      \"\"\"
-      def fibonacci(n) when is_integer(n) and n >= 0 do
-        {result, _} = fibonacci_with_cache(n, %{0 => 0, 1 => 1})
-        result
-      end
-
-      defp fibonacci_with_cache(n, cache) do
-        case Map.get(cache, n) do
-          nil ->
-            {n1, cache1} = fibonacci_with_cache(n - 1, cache)
-            {n2, cache2} = fibonacci_with_cache(n - 2, cache1)
-            result = n1 + n2
-            {result, Map.put(cache2, n, result)}
-          cached_value ->
-            {cached_value, cache}
-        end
-      end
-
-      @doc \"\"\"
-      Determines if a number is prime using an optimized implementation.
-      \"\"\"
-      def is_prime?(n) when n <= 1, do: false
-      def is_prime?(2), do: true
-      def is_prime?(n) when rem(n, 2) == 0, do: false
-      def is_prime?(n) do
-        # Only check odd divisors
-        Stream.iterate(3, &(&1 + 2))
-        |> Stream.take_while(&(&1 <= :math.sqrt(n)))
-        |> Enum.any?(&(rem(n, &1) == 0))
-        |> Kernel.not()
-      end
-    end
-    """
-  end
-
-IO.puts("✅ Optimized implementation generated!\n")
-IO.puts(optimized_code)
-
-# Display optimization explanation if available
-if optimization_response != nil && is_struct(optimization_response) do
-  if Map.has_key?(optimization_response, :explanation) do
-    IO.puts("\nOptimization explanation:")
-    IO.puts(optimization_response.explanation)
-  end
-
-  if Map.has_key?(optimization_response, :expected_improvements) do
-    improvements = optimization_response.expected_improvements
-    IO.puts("\nExpected improvements:")
-    IO.puts("- Performance: #{improvements.performance}")
-    IO.puts("- Maintainability: #{improvements.maintainability}")
-    IO.puts("- Safety: #{improvements.safety}")
-  end
-end
-
-# Step 3: Evaluate the optimization
-IO.puts("\n4️⃣ Evaluating optimization across multiple dimensions...")
-
-metrics = %{
-  "performance" => %{
-    "original_time_ms" => 2500,
-    "optimized_time_ms" => 10,
-    "memory_original_mb" => 150,
-    "memory_optimized_mb" => 15
-  },
-  "maintainability" => %{
-    "complexity_score_original" => 8,
-    "complexity_score_optimized" => 5,
-    "lines_of_code_original" => 5,
-    "lines_of_code_optimized" => 24
-  },
-  "safety" => %{
-    "edge_cases_handled_original" => 2,
-    "edge_cases_handled_optimized" => 4
-  }
-}
-
-evaluation_raw =
-  try do
-    case AshSwarm.Foundations.AIExperimentEvaluation.evaluate_experiment(
-           original_code,
-           optimized_code,
-           metrics
-         ) do
-      {:ok, result} ->
-        result
-
-      {:error, reason} ->
-        IO.puts("⚠️ Evaluation error: #{inspect(reason)}")
-        nil
-    end
-  rescue
-    e ->
-      IO.puts("Error during evaluation: #{inspect(e)}")
-      nil
-  end
-
-# Function to create a fallback evaluation
-get_fallback_evaluation = fn ->
-  %{
-    evaluation: %{
-      success_rating: 0.85,
-      recommendation: "Apply with Confidence",
-      risks: [
-        "Increased code complexity due to memoization pattern",
-        "Slightly higher memory usage requirements"
-      ],
-      improvement_areas: [
-        "Consider adding upper bound to memoization cache for very large inputs",
-        "Add more detailed documentation explaining the optimization approach"
-      ]
-    }
-  }
-end
-
-# Process the evaluation result
-{evaluation_result, raw_evaluation} =
-  cond do
-    is_nil(evaluation_raw) ->
-      {get_fallback_evaluation.().evaluation, nil}
-
-    # Handle the case where evaluation directly contains the evaluation struct
-    is_struct(evaluation_raw) && Map.has_key?(evaluation_raw, :success_rating) ->
-      {evaluation_raw, evaluation_raw}
-
-    # Handle the case where evaluation contains a nested evaluation field
-    is_map(evaluation_raw) && Map.has_key?(evaluation_raw, :evaluation) &&
-      is_struct(evaluation_raw.evaluation) &&
-        Map.has_key?(evaluation_raw.evaluation, :success_rating) ->
-      {evaluation_raw.evaluation, evaluation_raw}
-
-    # Handle any other structure
-    true ->
-      IO.puts("⚠️ Unexpected evaluation result structure: #{inspect(evaluation_raw)}")
-      {get_fallback_evaluation.().evaluation, evaluation_raw}
-  end
-
-IO.puts("✅ Evaluation complete!\n")
-IO.puts("Evaluation results:")
-IO.puts("- Success Rating: #{evaluation_result.success_rating * 100}%")
-IO.puts("- Recommendation: #{evaluation_result.recommendation}")
-
-IO.puts("\nRisks:")
-
-if is_list(evaluation_result.risks) do
-  Enum.each(evaluation_result.risks, fn risk -> IO.puts("- #{risk}") end)
-else
-  IO.puts("- No risks identified")
-end
-
-IO.puts("\nImprovement Areas:")
-
-if is_list(evaluation_result.improvement_areas) do
-  Enum.each(evaluation_result.improvement_areas, fn area -> IO.puts("- #{area}") end)
-else
-  IO.puts("- No improvement areas identified")
-end
-
-# Display the raw evaluation explanation if available
-if raw_evaluation != nil && is_map(raw_evaluation) && Map.has_key?(raw_evaluation, :explanation) do
-  IO.puts("\nEvaluation explanation:")
-  IO.puts(raw_evaluation.explanation)
-end
-
-IO.puts("\n✨ Demo execution completed!")
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-warning: variable "opportunities" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
-  #cell:ipz2va22llm5v6hraf725nfykwkk44gm:84
-
-✅ Found GROQ_API_KEY
-
-🚀 Running inline Adaptive Code Evolution demo...
-
-1️⃣ Original code to analyze:
-defmodule SlowOperations do
-  @moduledoc """
-  Module containing inefficient implementations of common algorithms.
-  """
-
-  @doc """
-  Calculates the nth Fibonacci number using naive recursion.
-  This implementation has exponential time complexity.
-  """
-  def fibonacci(0), do: 0
-  def fibonacci(1), do: 1
-  def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)
-
-  @doc """
-  Determines if a number is prime using a naive implementation.
-  """
-  def is_prime?(n) when n <= 1, do: false
-  def is_prime?(2), do: true
-  def is_prime?(n) do
-    2..floor(:math.sqrt(n))
-    |> Enum.any?(fn i -> rem(n, i) == 0 end)
-    |> Kernel.not()
-  end
-end
-
-
-
-2️⃣ Analyzing code for optimization opportunities...
-
-07:00:12.469 [debug] [DEBUG] Using model: llama3-70b-8192
-
-07:00:12.470 [debug] [DEBUG] Client type: groq
-
-07:00:12.471 [debug] [DEBUG] Response model: %{opportunities: [], summary: ""}
-
-07:00:12.471 [debug] Groq Request URL: https://api.groq.com/openai/v1/chat/completions
-
-07:00:16.165 [debug] Trying to extract optimization data from raw text response
-
-07:00:16.165 [debug] Creating synthetic opportunity from text response
-✅ Analysis complete!
-
-Analysis result has unexpected format: [%{id: "e2914262a1294489", timestamp: ~U[2025-03-06 07:00:16.165727Z], type: "performance", description: "Exponential time complexity due to naive recursive implementation", location: "fibonacci/1", severity: "high", rationale: "The recursive implementation leads to exponential O(2^n) time complexity as each call branches into two recursive calls without memoization.", suggested_change: "defmodule OptimizedOperations do\n  def fibonacci(n), do: fibonacci(n, %{0 => 0, 1 => 1})\n  \n  defp fibonacci(n, memo) when is_map_key(memo, n), do: Map.get(memo, n)\n  defp fibonacci(n, memo) do\n    {result, memo} = fibonacci_calc(n, memo)\n    result\n  end\n  \n  defp fibonacci_calc(n, memo) do\n    {n1, memo} = \n      if is_map_key(memo, n-1) do\n        {Map.get(memo, n-1), memo}\n      else\n        fibonacci_calc(n-1, memo)\n      end\n      \n    {n2, memo} = \n      if is_map_key(memo, n-2) do\n        {Map.get(memo, n-2), memo}\n      else\n        fibonacci_calc(n-2, memo)\n      end\n    \n    result = n1 + n2\n    {result, Map.put(memo, n, result)}\n  end\nend"}]
-
-3️⃣ Generating optimized implementation...
-
-07:00:16.166 [debug] [DEBUG] Using model: llama3-70b-8192
-
-07:00:16.167 [debug] [DEBUG] Client type: groq
-
-07:00:16.167 [debug] [DEBUG] Response model: %{documentation: "", optimized_code: "", explanation: "", expected_improvements: %{performance: "", maintainability: "", safety: ""}}
-
-07:00:16.167 [debug] Groq Request URL: https://api.groq.com/openai/v1/chat/completions
-
-07:00:18.821 [debug] Trying to extract optimization data from raw text response
-
-07:00:18.821 [debug] Trying to extract optimization data from raw text response
-✅ Optimized implementation generated!
-
-defmodule FastOperations do
-  @moduledoc """
-  Module containing optimized implementations of common algorithms.
-  """
-
-  @doc """
-  Calculates the nth Fibonacci number using memoization and dynamic programming.
-  This implementation has linear time complexity.
-  """
-  def fibonacci(n) do
-    fib_helper(n, %{0 => 0, 1 => 1})
-  end
-
-  defp fib_helper(0, _), do: 0
-  defp fib_helper(1, _), do: 1
-  defp fib_helper(n, memo) do
-    case Map.fetch(memo, n) do
-      {:ok, value} -> value
-      :error ->
-        value = fib_helper(n - 1, memo) + fib_helper(n - 2, memo)
-        %{memo | n => value}
-        |> then(fn memo -> value end)
-    end
-  end
-
-  @doc """
-  Determines if a number is prime using a more efficient implementation.
-  """
-  def is_prime?(n) when n <= 1, do: false
-  def is_prime?(2), do: true
-  def is_prime?(n) do
-    2..floor(:math.sqrt(n))
-    |> Stream.all?(fn i -> rem(n, i) != 0 end)
-  end
-end
-
-Optimization explanation:
-Here is the optimized version of the code:
-
-
-
-**Explanation of changes and their expected benefits:**
-
-1. **Fibonacci optimization:**
-   - The original implementation had exponential time complexity due to the repeated computation of the same sub-problems. 
-   - The optimized implementation uses memoization to store the results of sub-problems, reducing the time complexity to linear. 
-   - This optimization is expected to significantly improve performance for large inputs, with an expected improvement of 'orders of magnitude faster'.
-   - Maintainability is improved as the code is more concise and easier to understand.
-   - Safety is not affected by this optimization.
-
-2. **Prime number optimization:**
-   - The original implementation used `Enum.any?/2` which realizes the entire enumerable, whereas the optimized implementation uses `Stream.all?/2` which stops as soon as it finds a divisor.
-   - This optimization is expected to improve performance for large inputs, with an expected improvement of 'up to 50% faster'.
-   - Maintainability is not affected by this optimization.
-   - Safety is not affected by this optimization.
-
-**Comprehensive documentation for the optimized code:**
-
-The `FastOperations` module provides optimized implementations of common algorithms.
-
-### fibonacci/1
-
-Calculates the nth Fibonacci number using memoization and dynamic programming.
-
-#### Args
-
-* `n`: The position of the Fibonacci number to calculate.
-
-#### Returns
-
-The nth Fibonacci number.
-
-#### Performance characteristics
-
-This implementation has linear time complexity, making it much faster than the original naive recursive implementation for large inputs.
-
-#### Usage instructions
-
-Call the `fibonacci/1` function with the desired Fibonacci number position as an argument.
-
-### is_prime?/1
-
-Determines if a number is prime using a more efficient implementation.
-
-#### Args
-
-* `n`: The number to check for primality.
-
-#### Returns
-
-`true` if the number is prime, `false` otherwise.
-
-#### Performance characteristics
-
-This implementation is more efficient than the original naive implementation, especially for large inputs.
-
-#### Usage instructions
-
-Call the `is_prime?/1` function with the number to check as an argument.
-
-**Expected improvements:**
-
-* Performance: 'orders of magnitude faster' for large Fibonacci inputs, 'up to 50% faster' for prime number checks.
-* Maintainability: Improved for the Fibonacci implementation, no impact for the prime number implementation.
-* Safety: No impact for either optimization.
-
-Expected improvements:
-- Performance: **
-- Maintainability: **
-- Safety: **
-
-4️⃣ Evaluating optimization across multiple dimensions...
-
-07:00:18.822 [debug] Calling InstructorHelper for evaluation
-
-07:00:18.822 [debug] [DEBUG] Using model: llama3-70b-8192
-
-07:00:18.822 [debug] [DEBUG] Client type: groq
-
-07:00:18.822 [debug] [DEBUG] Response model: %AshSwarm.Foundations.AIExperimentEvaluation.EvaluationResponse{evaluation: nil, explanation: ""}
-
-07:00:18.822 [debug] Groq Request URL: https://api.groq.com/openai/v1/chat/completions
-
-07:00:20.358 [debug] Trying to extract optimization data from raw text response
-✅ Evaluation complete!
-
-Evaluation results:
-- Success Rating: 80.0%
-- Recommendation: Apply with Caution**
-
-Risks:
-- **Lack of metrics**: Without concrete performance metrics, it is difficult to quantify the improvement achieved by the optimization.
-- **Unverified test results**: The absence of test results raises concerns about the correctness and reliability of the optimized code.
-- **Potential edge cases**: The optimized code may not handle edge cases or unexpected inputs as well as the original implementation.
-
-Improvement Areas:
-- No specific improvement areas identified
-
-Evaluation explanation:
-**Evaluation Report**
-
-**Success Rating: 0.8**
-
-Although the optimization experiment lacks concrete metrics, the optimized code implementation demonstrates a clear understanding of performance optimization techniques. The use of memoization and dynamic programming in the `fibonacci` function and the more efficient implementation of `is_prime?` function suggest a significant improvement in performance.
-
-**Recommendation: Apply with Caution**
-
-While the optimized code appears to be an improvement over the original implementation, the lack of concrete metrics and test results makes it difficult to fully assess the success of the optimization. It is recommended to apply the optimized code, but with caution, and to closely monitor its performance in production.
-
-**Key Risks:**
-
-1. **Lack of metrics**: Without concrete performance metrics, it is difficult to quantify the improvement achieved by the optimization.
-2. **Unverified test results**: The absence of test results raises concerns about the correctness and reliability of the optimized code.
-3. **Potential edge cases**: The optimized code may not handle edge cases or unexpected inputs as well as the original implementation.
-
-**Improvement Areas:**
-
-1. **Collect and report metrics**: Gather concrete performance metrics, such as execution time and memory usage, to quantify the improvement achieved by the optimization.
-2. **Conduct thorough testing**: Perform comprehensive testing to ensure the optimized code is correct, reliable, and handles edge cases properly.
-3. **Static analysis**: Perform static analysis to identify potential issues, such as code smells or security vulnerabilities, in the optimized code.
-
-By addressing these improvement areas, the optimization experiment can be further refined to ensure a more confident and successful outcome.
-
-✨ Demo execution completed!
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-:ok
-```
-
 ### Implementation Considerations
 
 When implementing Adaptive Code Evolution in your own systems, consider these key factors:
@@ -2010,4 +1206,8 @@ next_steps_markdown = """
 Kino.Markdown.new(next_steps_markdown)
 ```
 
-<!-- livebook:{"offset":70051,"stamp":{"token":"XCP.AlBw8jgyT1dm1hsFLmOQUqzRXUYbY9dSO8p5yl2GjtHK3HE7nHtMqmT9enDYZDn2vQrhwAGeB9ecIc7mO-Yc7uatP1mrniirAdzziLH3V6RBF4g2VHlL","version":2}} -->
+<!-- livebook:{"offset":37057,"stamp":{"token":"XCP.-wMvovc10DdTfUFI7rPQnN3lXQ57V6htRY2UBo9Af-PpaNUv2vMlo6FMq8tQaO9oUicfJIj0GXZWVAboMvYWAtuh7Mp2nvLkn3AHyFN5uZ-npKxljJ2d","version":2}} -->
+
+<!-- livebook:{"offset":40299,"stamp":{"token":"XCP.QDlCtDwZ_M0v1k7f--JwigNAQBzyysSh2kH04fmylzrL4AguG6IRuqWPPhw0SU4DhUlEZwGLLVbKCTuSL0YqB-0vNQHp97227DxYsSP94RSYXdRqu1ei","version":2}} -->
+
+<!-- livebook:{"offset":39636,"stamp":{"token":"XCP.JX9GfZoLjyydi7C3K0lBC3v5Xl-dJMpd-CGUnBSDRiVzoxZcpTM61hgkK5HhAt5FiGV7zTk7h4mOf7tMZ8wEo8EL8_i3rvFQygKSK_XWl5bh_Hjr-NBh","version":2}} -->
