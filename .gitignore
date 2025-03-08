@@ -24,6 +24,7 @@ node_modules
 live_books/*.autosave.livemd
 
 # Ignore local fix and utility scripts
+# These are local helper scripts that shouldn't be committed
 clean_fix.sh
 final_fix.sh
 fix_all_syntax.sh
