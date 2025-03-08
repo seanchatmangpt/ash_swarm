@@ -1,0 +1,724 @@
+# Introduction to Adaptive Code Evolution
+
+## Overview
+
+Adaptive Code Evolution is a powerful pattern that enables software systems to continuously evolve and improve based on usage patterns, performance metrics, and feedback loops. This pattern represents a paradigm shift from static codebases to dynamic, self-improving systems that can adapt to changing requirements and environments.
+
+In this livebook, we'll explore the core concepts, benefits, and implementation strategies of Adaptive Code Evolution using Ash and Instructor.
+
+```elixir
+Mix.install(
+  [
+    {:kino, "~> 0.12.0"},
+    {:ash_swarm, path: "/Users/speed/ash_swarm/"},
+    {:instructor, "~> 0.1.0"},
+    {:jason, "~> 1.4"},
+    {:poison, "~> 5.0"},
+    {:sourceror, "~> 1.0"},
+    {:git_diff, "~> 0.6.4"},
+    {:heroicons, git: "https://github.com/tailwindlabs/heroicons.git", tag: "v2.1.1", sparse: "optimized", app: false, compile: false, depth: 1}
+  ],
+  config_path: "/Users/speed/ash_swarm/config/config.exs",
+  lockfile: "/Users/speed/ash_swarm/mix.lock"
+)
+
+# Ensure local AshSwarm modules are compiled and loaded
+Code.require_file("/Users/speed/ash_swarm/lib/ash_swarm/foundations/ai_code_analysis.ex")
+
+# Set up environment variables for API access
+api_key = System.get_env("GROQ_API_KEY") || System.get_env("LB_GROQ_API_KEY")
+
+if is_nil(api_key) or api_key == "" do
+  IO.puts("""
+  ⚠️ **No GROQ_API_KEY found.**
+  Some examples will use simulated responses.
+  Set your API key in Livebook secrets as `LB_GROQ_API_KEY`.
+  """)
+else
+  System.put_env("GROQ_API_KEY", api_key)
+  IO.puts("✅ **GROQ_API_KEY loaded successfully!**")
+end
+
+# Load local AshSwarm modules explicitly
+Code.require_file("/Users/speed/ash_swarm/lib/ash_swarm/foundations/ai_code_analysis.ex")
+
+# Import required modules for convenience
+alias AshSwarm.Foundations.{
+  AdaptiveCodeEvolution,
+  AICodeAnalysis,
+  AIAdaptationStrategies,
+  AIExperimentEvaluation
+}
+
+IO.puts("🚀 **Livebook environment ready for Adaptive Code Evolution with local AshSwarm modules!**")
+```
+
+Adaptive Code Evolution comprises several fundamental concepts that work together to create a self-improving system:
+
+### 1. Code Analysis
+
+Systems that implement adaptive code evolution must be able to analyze their own structure, identify potential optimization opportunities, and determine areas that could benefit from improvement.
+
+```elixir
+defmodule Opportunity do
+  defstruct description: "",
+            location: "",
+            rationale: "",
+            severity: "",
+            suggested_change: "",
+            type: ""
+end
+
+defmodule CodeAnalysisResponse do
+  defstruct opportunities: []
+end
+
+:ok
+```
+
+```elixir
+defmodule MyApp.AdaptiveEvolution do
+  use AshSwarm.Foundations.AdaptiveCodeEvolution
+
+  ai_analyzer :code_quality,
+    description: "Analyzes code quality using LLMs",
+    analyzer_module: AshSwarm.Foundations.AICodeAnalysis,
+    analyzer_function: :analyze_source_code
+end
+
+:ok
+```
+
+````elixir
+# Cell 3: Run AI Analysis and Render Markdown
+
+alias AshSwarm.InstructorHelper
+require Kino
+
+# Sample code to analyze
+sample_code = """
+defmodule SlowOperations do
+  @moduledoc \"\"\"
+  Contains deliberately inefficient implementations for demonstration purposes.
+  \"\"\"
+
+  def fibonacci(0), do: 0
+  def fibonacci(1), do: 1
+  def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)
+end
+"""
+
+analysis_options = [
+  focus_areas: [:performance, :readability, :maintainability],
+  max_suggestions: 5
+]
+
+# IMPORTANT: mention "json" so Groq honors response_format: "json_object"
+sys_msg = """
+You are an expert Elixir code analyst. **IMPORTANT**: Provide your answer as valid JSON only.
+Return a top-level \"opportunities\" array, each item must have:
+- description
+- location
+- rationale
+- severity
+- suggested_change
+- type (performance, readability, or maintainability)
+"""
+
+user_msg = """
+Analyze the following Elixir code for potential optimizations and return the response in JSON:
+
+#{sample_code}
+
+Focus areas: #{Enum.join(analysis_options[:focus_areas], ", ")}.
+Provide up to #{analysis_options[:max_suggestions]} suggestions.
+"""
+
+IO.puts("🔍 Analyzing code using AI-powered analysis...")
+
+case InstructorHelper.gen(%CodeAnalysisResponse{}, sys_msg, user_msg, "llama3-70b-8192") do
+  # If we get a CodeAnalysisResponse with a raw "opportunities" list
+  {:ok, %CodeAnalysisResponse{opportunities: opps_raw}} ->
+    # Convert string-keyed maps into our %Opportunity{} struct
+    opps =
+      Enum.map(opps_raw, fn opp ->
+        %Opportunity{
+          description: Map.get(opp, "description", ""),
+          location: Map.get(opp, "location", ""),
+          rationale: Map.get(opp, "rationale", ""),
+          severity: Map.get(opp, "severity", ""),
+          suggested_change: Map.get(opp, "suggested_change", ""),
+          type: Map.get(opp, "type", "")
+        }
+      end)
+
+    IO.puts("✅ Analysis successful with #{length(opps)} opportunities identified.")
+
+    # Build table rows
+    rows =
+      Enum.map(opps, fn opp ->
+        truncated_rationale =
+          if String.length(opp.rationale) > 100 do
+            String.slice(opp.rationale, 0, 100) <> "..."
+          else
+            opp.rationale
+          end
+
+        "| #{opp.location} | #{opp.description} | #{opp.type} | #{opp.severity} | #{truncated_rationale} |"
+      end)
+
+    # Build code blocks
+    code_blocks =
+      Enum.map(Enum.with_index(opps, 1), fn {opp, idx} ->
+        """
+        #### Optimization #{idx}: #{opp.description}
+
+        ```elixir
+        #{opp.suggested_change}
+        ```
+        """
+      end)
+
+    # Build final markdown output
+    markdown = """
+    ## AI Code Analysis Results
+
+    The analysis identified **#{length(opps)}** optimization opportunities:
+
+    ### Summary Table
+
+    | Location | Description | Type | Severity | Rationale |
+    | -------- | ----------- | ---- | -------- | --------- |
+    #{Enum.join(rows, "\n")}
+
+    ### Suggested Improvements
+
+    #{Enum.join(code_blocks, "\n\n")}
+
+    *Powered by AdaptiveCodeEvolution with AshSwarm and Instructor*
+    """
+
+    # Render markdown in Livebook
+    Kino.Markdown.new(markdown)
+
+  {:error, reason} ->
+    IO.puts("⚠️ Analysis error: #{inspect(reason)}")
+end
+````
+
+### 2. Adaptation Strategies
+
+Once optimization opportunities are identified, the system must determine how to adapt the code to improve it. This involves generating new implementations that maintain functionality while enhancing performance, maintainability, or other desired qualities.
+
+```elixir
+# Cell 1: Define original code and usage data
+
+original_code = """
+defmodule SlowOperations do
+  def fibonacci(0), do: 0
+  def fibonacci(1), do: 1
+  def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)
+end
+"""
+
+usage_data = %{
+  "call_frequencies" => %{
+    "fibonacci/1" => 1000
+  },
+  "typical_args" => %{
+    "fibonacci/1" => %{
+      "n" => "typically between 10 and 30"
+    }
+  },
+  "common_patterns" => [
+    "frequent calls with incremental n values",
+    "repeated calls with same n value"
+  ]
+}
+
+IO.puts("Generating optimized implementation...")
+```
+
+````elixir
+alias Kino.Markdown
+IO.puts("Generating optimized implementation...")
+
+# Define a response model for optimization matching the expected JSON structure
+response_model = %{
+  optimized_code: "",
+  explanation: "",
+  documentation: "",
+  expected_improvements: %{
+    performance: "",
+    maintainability: "",
+    safety: ""
+  }
+}
+
+# Prepare system message explicitly including "json"
+sys_msg = """
+You are an expert code optimization assistant. IMPORTANT: Please respond in valid json.
+Your response MUST include the literal substring "json" in the output.
+Return a json object with the following keys:
+- optimized_code: the optimized code as a string,
+- explanation: a detailed explanation of the optimization,
+- documentation: documentation for the optimized code,
+- expected_improvements: an object with keys "performance", "maintainability", and "safety".
+"""
+
+# Prepare user message explicitly including "json"
+user_msg = """
+Optimize the following Elixir code for performance and return your answer in valid json format.
+Include the word "json" in your response.
+
+#{original_code}
+
+Usage data:
+#{inspect(usage_data)}
+
+Focus on using memoization and efficient algorithms.
+"""
+
+case InstructorHelper.gen(response_model, sys_msg, user_msg, "llama3-70b-8192") do
+  {:ok, result} ->
+    IO.puts("✅ Optimization successful")
+    optimized_code = result["optimized_code"] || ""
+    explanation = result["explanation"] || ""
+    documentation = result["documentation"] || ""
+    expected_improvements = result["expected_improvements"] || %{}
+
+    # Build a code block for the optimized code
+    code_block = "```elixir\n#{optimized_code}\n```"
+
+    # Build final markdown output with code blocks and a summary table for details
+    markdown = """
+    ### Original Implementation
+
+    ```elixir
+    #{original_code}
+    ```
+
+    ### Optimized Implementation
+
+    #{code_block}
+
+    ### Explanation
+
+    #{explanation}
+
+    ### Documentation
+
+    #{documentation}
+
+    ### Expected Improvements
+
+    - **Performance**: #{expected_improvements["performance"] || "N/A"}
+    - **Maintainability**: #{expected_improvements["maintainability"] || "N/A"}
+    - **Safety**: #{expected_improvements["safety"] || "N/A"}
+
+    *Powered by AdaptiveCodeEvolution with AshSwarm and Instructor*
+    """
+
+    Markdown.new(markdown)
+
+  {:error, reason} ->
+    IO.puts("❌ Optimization failed: #{inspect(reason)}")
+end
+````
+
+### 3. Experiment Evaluation
+
+Adaptive systems need to evaluate the effectiveness of code adaptations through experiments that compare the original and modified implementations across various metrics such as performance, maintainability, and safety.
+
+```elixir
+# Define helper functions for evaluation display
+extract_metrics = fn result, category ->
+  metrics = get_in(result, ["evaluation", category]) || []
+  metrics
+end
+
+# Define original and optimized code for evaluation
+original_code = """
+defmodule SlowOperations do
+  def fibonacci(0), do: 0
+  def fibonacci(1), do: 1
+  def fibonacci(n) when n > 1, do: fibonacci(n - 1) + fibonacci(n - 2)
+end
+"""
+
+optimized_code = """
+defmodule OptimizedOperations do
+  @moduledoc \"\"\"
+  Provides optimized implementations of common algorithms.
+  \"\"\"
+
+  @doc \"\"\"
+  Calculates the nth Fibonacci number using memoization.
+  This implementation has linear time complexity.
+
+  ## Examples
+
+      iex> OptimizedOperations.fibonacci(10)
+      55
+
+  \"\"\"
+  @spec fibonacci(non_neg_integer()) :: non_neg_integer()
+  def fibonacci(n) when is_integer(n) and n >= 0 do
+    {result, _} = fibonacci_with_cache(n, %{0 => 0, 1 => 1})
+    result
+  end
+
+  @spec fibonacci_with_cache(non_neg_integer(), map()) :: {non_neg_integer(), map()}
+  defp fibonacci_with_cache(n, cache) do
+    case Map.get(cache, n) do
+      nil ->
+        {n1, cache1} = fibonacci_with_cache(n - 1, cache)
+        {n2, cache2} = fibonacci_with_cache(n - 2, cache1)
+        result = n1 + n2
+        {result, Map.put(cache2, n, result)}
+      cached_value ->
+        {cached_value, cache}
+    end
+  end
+end
+"""
+
+# Define metrics to be used in evaluation
+metrics = %{
+  "performance" => %{
+    "original_time_ms" => 2500,
+    "optimized_time_ms" => 10,
+    "memory_original_mb" => 150,
+    "memory_optimized_mb" => 15
+  },
+  "maintainability" => %{
+    "complexity_score_original" => 8,
+    "complexity_score_optimized" => 5,
+    "lines_of_code_original" => 5,
+    "lines_of_code_optimized" => 24
+  },
+  "safety" => %{
+    "edge_cases_handled_original" => 2,
+    "edge_cases_handled_optimized" => 4
+  }
+}
+
+IO.puts("Evaluating code optimization experiment...")
+
+# Get evaluation results
+evaluation_result =
+  case AdaptiveCodeEvolution.evaluate_experiment(original_code, optimized_code, metrics) do
+    {:ok, result} -> 
+      IO.puts("✅ Evaluation successful")
+      result
+    {:error, reason} -> 
+      IO.puts("❌ Evaluation failed: #{inspect(reason)}")
+      %{
+        "evaluation" => %{
+          "performance" => [
+            %{"name" => "execution_time", "original" => "2.5s", "optimized" => "0.01s", "improvement" => "99.6%"},
+            %{"name" => "memory_usage", "original" => "150MB", "optimized" => "15MB", "improvement" => "90%"}
+          ],
+          "maintainability" => [
+            %{"name" => "complexity", "original" => "high", "optimized" => "medium", "improvement" => "moderate"},
+            %{"name" => "readability", "original" => "medium", "optimized" => "high", "improvement" => "significant"},
+            %{"name" => "documentation", "original" => "minimal", "optimized" => "comprehensive", "improvement" => "significant"}
+          ],
+          "safety" => [
+            %{"name" => "edge_cases", "original" => "vulnerable", "optimized" => "robust", "improvement" => "significant"},
+            %{"name" => "error_handling", "original" => "minimal", "optimized" => "comprehensive", "improvement" => "significant"},
+            %{"name" => "input_validation", "original" => "none", "optimized" => "complete", "improvement" => "significant"}
+          ]
+        },
+        "success_rating" => 0.95,
+        "recommendation" => "apply",
+        "risks" => ["Slightly increased code complexity", "Additional memory usage for cache"],
+        "improvement_areas" => ["Could add telemetry for cache hits/misses", "Could make cache size configurable"]
+      }
+  end
+
+# Extract evaluation metrics
+performance_metrics = extract_metrics.(evaluation_result, "performance")
+maintainability_metrics = extract_metrics.(evaluation_result, "maintainability")
+safety_metrics = extract_metrics.(evaluation_result, "safety")
+
+# Display performance metrics as a Markdown table
+performance_rows =
+  for metric <- performance_metrics do
+    "| #{metric["name"]} | #{metric["original"]} | #{metric["optimized"]} | #{metric["improvement"]} |"
+  end
+
+performance_markdown = """
+### Performance Metrics
+
+| Metric | Original | Optimized | Improvement |
+| ------ | -------- | --------- | ----------- |
+#{Enum.join(performance_rows, "\n")}
+"""
+
+Kino.Markdown.new(performance_markdown)
+
+# Display maintainability metrics
+maintainability_rows =
+  for metric <- maintainability_metrics do
+    "| #{metric["name"]} | #{metric["original"]} | #{metric["optimized"]} | #{metric["improvement"]} |"
+  end
+
+maintainability_markdown = """
+### Maintainability Metrics
+
+| Metric | Original | Optimized | Improvement |
+| ------ | -------- | --------- | ----------- |
+#{Enum.join(maintainability_rows, "\n")}
+"""
+
+Kino.Markdown.new(maintainability_markdown)
+
+# Display safety metrics
+safety_rows =
+  for metric <- safety_metrics do
+    "| #{metric["name"]} | #{metric["original"]} | #{metric["optimized"]} | #{metric["improvement"]} |"
+  end
+
+safety_markdown = """
+### Safety Metrics
+
+| Metric | Original | Optimized | Improvement |
+| ------ | -------- | --------- | ----------- |
+#{Enum.join(safety_rows, "\n")}
+"""
+
+Kino.Markdown.new(safety_markdown)
+
+# Display evaluation summary
+success_rating = evaluation_result["success_rating"] || 0.95
+recommendation = evaluation_result["recommendation"] || "apply"
+risks = evaluation_result["risks"] || []
+improvement_areas = evaluation_result["improvement_areas"] || []
+
+risks_list = Enum.map_join(risks, "\n", fn risk -> "- #{risk}" end)
+improvement_areas_list = Enum.map_join(improvement_areas, "\n", fn area -> "- #{area}" end)
+
+evaluation_summary = """
+### Evaluation Summary
+
+**Success Rating**: #{success_rating * 100}%
+
+**Recommendation**: #{recommendation}
+
+**Risks**:
+#{risks_list}
+
+**Improvement Areas**:
+#{improvement_areas_list}
+
+The optimized implementation shows significant improvements across all dimensions:
+
+- **Performance**: ~95% average improvement
+- **Maintainability**: Substantial enhancement in readability and documentation
+- **Safety**: Major improvements in error handling and edge case management
+"""
+
+Kino.Markdown.new(evaluation_summary)
+```
+
+### 4. Using Ash Resource for Managing Optimizations
+
+Let's demonstrate how to use our ACE.Optimization resource for persisting and managing code optimizations.
+
+````elixir
+# Let's store an optimization in our Ash resource
+result = ACE.Optimization
+  |> Ash.Changeset.for_create(:optimize, %{code: original_code})
+  |> ACE.Api.create()
+
+case result do
+  {:ok, optimization} ->
+    # Display the stored optimization details
+    Kino.Markdown.new("""
+    ## Stored Optimization
+    
+    **ID**: #{optimization.id}
+    **Module**: #{optimization.module_name}
+    **Function**: #{optimization.function_name}
+    **Created At**: #{optimization.created_at}
+    
+    ### Original Code:
+    ```elixir
+    #{optimization.original_code}
+    ```
+    
+    ### Optimized Code:
+    ```elixir
+    #{optimization.optimized_code}
+    ```
+    """)
+    
+  {:error, error} ->
+    IO.puts("Failed to store optimization: #{inspect(error)}")
+    Kino.Markdown.new("Failed to store optimization in the Ash resource.")
+end
+````
+
+Implementing the Adaptive Code Evolution pattern offers numerous benefits for software systems and development teams:
+
+```elixir
+implementation_considerations = [
+  %{
+    area: "Model Selection",
+    consideration: "Choose AI models appropriate for your codebase size and complexity",
+    recommendation:
+      "Smaller models for frequent, simple optimizations; larger models for complex architectural changes"
+  },
+  %{
+    area: "Evaluation Criteria",
+    consideration: "Define clear metrics for evaluating optimization success",
+    recommendation:
+      "Balance performance improvements with maintainability and safety considerations"
+  },
+  %{
+    area: "Integration Strategy",
+    consideration: "Determine how adaptations are integrated into your codebase",
+    recommendation:
+      "Start with developer-approved adaptations before moving to automated integration"
+  },
+  %{
+    area: "Feedback Mechanisms",
+    consideration: "Establish ways to provide feedback on adaptation quality",
+    recommendation:
+      "Track which adaptations are accepted, modified, or rejected to improve future suggestions"
+  },
+  %{
+    area: "Cost Management",
+    consideration: "Monitor API usage and costs for AI services",
+    recommendation: "Implement batch processing and caching to reduce redundant API calls"
+  }
+]
+
+# Create a Markdown table of implementation considerations
+consideration_rows =
+  for consideration <- implementation_considerations do
+    "| #{consideration.area} | #{consideration.consideration} | #{consideration.recommendation} |"
+  end
+
+considerations_markdown = """
+### Implementation Considerations
+
+| Area | Consideration | Recommendation |
+| ---- | ------------- | -------------- |
+#{Enum.join(consideration_rows, "\n")}
+
+### Key Benefits
+
+1. **Continuous Improvement**: Systems automatically identify and address optimization opportunities over time.
+
+2. **Targeted Enhancements**: Optimizations focus on actual usage patterns rather than hypothetical scenarios.
+
+3. **Reduced Technical Debt**: Proactive identification and refactoring of inefficient code reduces accumulation of technical debt.
+
+4. **Knowledge Capture**: The system captures and applies optimization knowledge consistently across the codebase.
+
+5. **Balanced Optimization**: Considering multiple factors (performance, readability, safety) rather than just one dimension.
+"""
+
+Kino.Markdown.new(considerations_markdown)
+```
+
+To implement Adaptive Code Evolution in your Elixir application using Ash and Instructor:
+
+```elixir
+implementation_steps = [
+  "1. Set up the necessary dependencies (Ash, Instructor)",
+  "2. Configure LLM access for code analysis and generation",
+  "3. Create Ash resources for storing optimizations",
+  "4. Implement code analysis functions",
+  "5. Implement adaptation strategy functions",
+  "6. Implement experiment evaluation functions",
+  "7. Add interfaces for developer approval and feedback",
+  "8. Set up monitoring for optimization effectiveness"
+]
+
+# Display as a bulleted list
+implementation_markdown = """
+### Implementation Steps
+
+#{Enum.join(implementation_steps, "\n")}
+
+### Example Implementation Structure
+
+```
+
+defmodule MyApp.AdaptiveEvolution do
+  use Ash.Resource
+
+attributes do
+
+```
+# Fields for tracking optimizations
+```
+
+end
+
+actions do
+
+```
+# Actions for analyzing, optimizing, evaluating
+```
+
+end
+
+def analyze_code(code) do
+
+```
+# Implementation
+```
+
+end
+
+def generate_optimized_implementation(code, usage_data) do
+
+```
+# Implementation
+```
+
+end
+
+def evaluate_experiment(original, optimized, metrics) do
+
+```
+# Implementation
+```
+
+end
+end
+
+```
+"""
+
+Kino.Markdown.new(implementation_markdown)
+```
+
+Adaptive Code Evolution represents a powerful paradigm shift in how we approach software development and maintenance. By leveraging AI capabilities with structured tools like Ash and Instructor, we can create systems that continuously evolve and improve over time.
+
+```elixir
+next_topics = [
+  "Setting up automated code analysis for large codebases",
+  "Integrating adaptive evolution with CI/CD pipelines",
+  "Measuring the long-term impact of adaptive evolution",
+  "Creating feedback loops between developers and AI optimizers",
+  "Implementing adaptive evolution for specific domains (Phoenix, Ash, etc.)"
+]
+
+# Display as a bulleted list
+next_steps_markdown = """
+### Topics for Further Exploration
+
+#{Enum.map(next_topics, fn topic -> "- #{topic}" end) |> Enum.join("\n")}
+
+Thank you for exploring Adaptive Code Evolution with us!
+"""
+
+Kino.Markdown.new(next_steps_markdown)
+```
+
+<!-- livebook:{"offset":21454,"stamp":{"token":"XCP.SCJbGamNrrP7-yk__XA1JWHgI97fDU-uvOs7-vQx3e8sPi5emyw0oGYsj_OP3NpU0cOg_Ab0rXQO_XU90qpummcdMdZqghrPOT3EdblQr65WYi2XuM5X","version":2}} -->

@@ -6,6 +6,13 @@ defmodule AshSwarm.InstructorHelper do
   """
   require Logger
 
+  # Get the instructor helper module to use (allows for mocking in tests)
+  @instructor_helper_module Application.compile_env(
+                              :ash_swarm,
+                              :instructor_helper_module,
+                              __MODULE__
+                            )
+
   @doc """
   Generates a completion using Instructor.
 
@@ -24,6 +31,20 @@ defmodule AshSwarm.InstructorHelper do
   @spec gen(map() | struct(), String.t(), String.t(), String.t() | nil) ::
           {:ok, any()} | {:error, any()}
   def gen(response_model, sys_msg, user_msg, model \\ nil) do
+    # If we're not using this module directly (i.e., we're using a mock),
+    # delegate to the appropriate module
+    if @instructor_helper_module != __MODULE__ do
+      apply(@instructor_helper_module, :gen, [response_model, sys_msg, user_msg, model])
+    else
+      # Use the original implementation
+      do_gen(response_model, sys_msg, user_msg, model)
+    end
+  end
+
+  # The original implementation
+  @spec do_gen(map() | struct(), String.t(), String.t(), String.t() | nil) ::
+          {:ok, any()} | {:error, any()}
+  defp do_gen(response_model, sys_msg, user_msg, model) do
     # Get the appropriate client and model
     {client, model_to_use} = get_client_and_model(model)
 

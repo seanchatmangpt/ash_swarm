@@ -269,3 +269,95 @@ Available Livebooks:
 To stop the servers:
 ```bash
 pkill -f phx.server && pkill -f livebook
+```
+
+## Features
+
+- AI-powered code analysis
+- Adaptive code evolution strategies
+- Experiment evaluation with language models
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/seanchatmangpt/ash_swarm.git
+cd ash_swarm
+
+# Install dependencies
+mix deps.get
+
+# Compile the project
+mix compile
+```
+
+## Running Tests
+
+The test suite is designed to run without making real API calls to external LLM services.
+
+```bash
+# Run all tests
+mix test
+
+# Run a specific test file
+mix test test/ash_swarm/foundations/ai_adaptive_evolution_example_test.exs
+```
+
+### Testing Notes
+
+1. Tests use mock implementations of the AI services to avoid making real API calls.
+2. If you want to run tests with real API calls (not recommended), you need to:
+   - Set the appropriate environment variables (GROQ_API_KEY, OPENAI_API_KEY, etc.)
+   - Modify the test setup to bypass the mocking
+
+## Running the Livebook
+
+```bash
+# Start the Livebook server with the project loaded
+./start_livebook_final.sh
+```
+
+This will start a Livebook server on port 8082 with the AshSwarm project loaded and ready to use.
+
+## Project Structure
+
+- `lib/ash_swarm/foundations`: Core concepts and implementations
+  - `ai_code_analysis.ex`: Code analysis using language models
+  - `ai_adaptation_strategies.ex`: Strategies for adapting code
+  - `ai_experiment_evaluation.ex`: Evaluation of code adaptations
+  - `adaptive_code_evolution.ex`: Core pattern implementation
+- `lib/ash_swarm/examples`: Example implementations
+- `test/ash_swarm`: Test suite
+
+## Issue with API Calls in Tests
+
+The test suite was initially making real API calls to language model services (Groq, OpenAI), which led to:
+- Rate limiting errors
+- Dependency on external services
+- Slow and unreliable tests
+
+This has been fixed by implementing mock versions of all AI services, allowing the tests to run without making any real API calls.
+
+## Environment Variables
+
+For actual use (not tests), you'll need to set environment variables for the LLM services:
+
+```bash
+# Groq API
+export GROQ_API_KEY="your-key-here"
+
+# OpenAI API
+export OPENAI_API_KEY="your-key-here"
+
+# Gemini API
+export GEMINI_API_KEY="your-key-here"
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin feature/my-new-feature`)
+5. Create a new Pull Request
+</rewritten_file>
