@@ -10,14 +10,14 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   setup do
     # Get the cleanup function from mock_external_services
     on_exit_fn = TestHelper.mock_external_services()
-    
+
     # Register it with ExUnit's on_exit callback
     on_exit(fn -> on_exit_fn.() end)
-    
+
     # Also clear API keys for the duration of the test
     cleanup_keys_fn = TestHelper.clear_api_keys()
     on_exit(fn -> cleanup_keys_fn.() end)
-    
+
     # Return :ok to indicate setup finished successfully
     :ok
   end
@@ -246,9 +246,9 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
 
       result =
         AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_optimization(
-          original_code, 
+          original_code,
           usage_patterns,
-          [optimization_focus: :performance]
+          optimization_focus: :performance
         )
 
       # Verify the result structure
@@ -292,12 +292,12 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
           original_code,
           optimized_code,
           metrics,
-          [evaluation_focus: :performance]
+          evaluation_focus: :performance
         )
 
       # Verify the result structure
       assert is_map(result)
-      
+
       # Check nested structure with pattern matching
       assert %{evaluation: evaluation} = result
       assert is_map(evaluation)

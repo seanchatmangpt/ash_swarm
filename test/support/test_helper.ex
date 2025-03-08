@@ -15,15 +15,24 @@ defmodule AshSwarm.TestHelper do
   def mock_external_services do
     # Using direct mocks is more reliable than Mox
     AshSwarm.Test.MockImplementations.setup_direct_mocks()
-    
+
     # Store original values to restore later
     original_ai_code_analysis = Application.get_env(:ash_swarm, :ai_code_analysis_module)
-    original_ai_adaptation_strategies = Application.get_env(:ash_swarm, :ai_adaptation_strategies_module)
-    original_ai_experiment_evaluation = Application.get_env(:ash_swarm, :ai_experiment_evaluation_module)
+
+    original_ai_adaptation_strategies =
+      Application.get_env(:ash_swarm, :ai_adaptation_strategies_module)
+
+    original_ai_experiment_evaluation =
+      Application.get_env(:ash_swarm, :ai_experiment_evaluation_module)
+
     original_instructor_helper = Application.get_env(:ash_swarm, :instructor_helper_module)
-    
+
     # Also set the mock instructor helper
-    Application.put_env(:ash_swarm, :instructor_helper_module, AshSwarm.Test.Mocks.MockInstructorHelper)
+    Application.put_env(
+      :ash_swarm,
+      :instructor_helper_module,
+      AshSwarm.Test.Mocks.MockInstructorHelper
+    )
 
     # Return a function to perform cleanup
     fn ->
@@ -33,19 +42,27 @@ defmodule AshSwarm.TestHelper do
       else
         Application.delete_env(:ash_swarm, :ai_code_analysis_module)
       end
-      
+
       if original_ai_adaptation_strategies do
-        Application.put_env(:ash_swarm, :ai_adaptation_strategies_module, original_ai_adaptation_strategies)
+        Application.put_env(
+          :ash_swarm,
+          :ai_adaptation_strategies_module,
+          original_ai_adaptation_strategies
+        )
       else
         Application.delete_env(:ash_swarm, :ai_adaptation_strategies_module)
       end
-      
+
       if original_ai_experiment_evaluation do
-        Application.put_env(:ash_swarm, :ai_experiment_evaluation_module, original_ai_experiment_evaluation)
+        Application.put_env(
+          :ash_swarm,
+          :ai_experiment_evaluation_module,
+          original_ai_experiment_evaluation
+        )
       else
         Application.delete_env(:ash_swarm, :ai_experiment_evaluation_module)
       end
-      
+
       if original_instructor_helper do
         Application.put_env(:ash_swarm, :instructor_helper_module, original_instructor_helper)
       else
@@ -53,10 +70,10 @@ defmodule AshSwarm.TestHelper do
       end
     end
   end
-  
+
   @doc """
   Clears all environment variables that would trigger real API calls.
-  
+
   Use this in setup_all to ensure no real API calls can be made during tests.
   """
   def clear_api_keys do
@@ -64,12 +81,12 @@ defmodule AshSwarm.TestHelper do
     original_groq_key = System.get_env("GROQ_API_KEY")
     original_openai_key = System.get_env("OPENAI_API_KEY")
     original_gemini_key = System.get_env("GEMINI_API_KEY")
-    
+
     # Clear the environment variables
     System.delete_env("GROQ_API_KEY")
     System.delete_env("OPENAI_API_KEY")
     System.delete_env("GEMINI_API_KEY")
-    
+
     # Return a function to restore the original values
     fn ->
       if original_groq_key, do: System.put_env("GROQ_API_KEY", original_groq_key)
@@ -77,4 +94,4 @@ defmodule AshSwarm.TestHelper do
       if original_gemini_key, do: System.put_env("GEMINI_API_KEY", original_gemini_key)
     end
   end
-end 
+end

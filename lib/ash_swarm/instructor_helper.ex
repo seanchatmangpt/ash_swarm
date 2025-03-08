@@ -8,10 +8,10 @@ defmodule AshSwarm.InstructorHelper do
 
   # Get the instructor helper module to use (allows for mocking in tests)
   @instructor_helper_module Application.compile_env(
-                          :ash_swarm,
-                          :instructor_helper_module,
-                          __MODULE__
-                        )
+                              :ash_swarm,
+                              :instructor_helper_module,
+                              __MODULE__
+                            )
 
   @doc """
   Generates a completion using Instructor.
@@ -38,7 +38,7 @@ defmodule AshSwarm.InstructorHelper do
     else
       # Use the original implementation
       do_gen(response_model, sys_msg, user_msg, model)
-    end 
+    end
   end
 
   # The original implementation
