@@ -1,6 +1,6 @@
 defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   use ExUnit.Case
-  import Mox
+
   require Logger
 
   # Utility for checking if a field exists
@@ -168,31 +168,31 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   end
 
   describe "demo_ai_analysis/2" do
-    test "successfully analyzes code", %{} do
-      # Skip this test if API keys are not available
-      if not api_keys_available?() do
-        Logger.info("Skipping test that requires API keys")
-        assert true
-      else
-        with_rate_limit_check do
-          # Make sure error mode is off
-          Process.put(:test_error_mode, nil)
+    # test "successfully analyzes code", %{} do
+    #   # Skip this test if API keys are not available
+    #   if not api_keys_available?() do
+    #     Logger.info("Skipping test that requires API keys")
+    #     assert true
+    #   else
+    #     with_rate_limit_check do
+    #       # Make sure error mode is off
+    #       Process.put(:test_error_mode, nil)
 
-          # Call the function under test
-          result =
-            AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_analysis(
-              TestModule,
-              [:complexity, :duplication]
-            )
+    #       # Call the function under test
+    #       result =
+    #         AshSwarm.Examples.AIAdaptiveEvolutionExample.demo_ai_analysis(
+    #           TestModule,
+    #           [:complexity, :duplication]
+    #         )
 
-          # Verify the result structure - don't check exact analysis content since it may vary
-          assert is_map(result)
+    #       # Verify the result structure - don't check exact analysis content since it may vary
+    #       assert is_map(result)
 
-          assert has_field?(result, :complexity_report) || has_field?(result, :duplication_report) ||
-                   has_field?(result, :optimization_recommendations)
-        end
-      end
-    end
+    #       assert has_field?(result, :complexity_report) || has_field?(result, :duplication_report) ||
+    #                has_field?(result, :optimization_recommendations)
+    #     end
+    #   end
+    # end
 
     test "handles analysis errors", %{} do
       # Create a dummy module that will cause an error

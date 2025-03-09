@@ -418,7 +418,7 @@ defmodule AshSwarm.InstructorHelper do
             %{error: "Failed to parse optimization response: #{inspect(e)}"}
         end
 
-      # Default case for unsupported response models  
+      # Default case for unsupported response models
       _ ->
         Logger.error(
           "Unsupported response model for non-JSON content: #{inspect(response_model)}"
@@ -691,67 +691,66 @@ defmodule AshSwarm.InstructorHelper do
     end
   end
 
-  @compile {:no_warn_undefined, [{__MODULE__, :convert_to_simple_json_schema, 1}]}
   @doc false
   # For future use - converts module to simple JSON schema
-  defp convert_to_simple_json_schema(model) do
-    cond do
-      is_map(model) ->
-        # For maps, create a schema for each field
-        properties =
-          Enum.map(model, fn {key, value} ->
-            {to_string(key), convert_to_simple_json_schema(value)}
-          end)
-          |> Enum.into(%{})
+  # defp convert_to_simple_json_schema(model) do
+  #   cond do
+  #     is_map(model) ->
+  #       # For maps, create a schema for each field
+  #       properties =
+  #         Enum.map(model, fn {key, value} ->
+  #           {to_string(key), convert_to_simple_json_schema(value)}
+  #         end)
+  #         |> Enum.into(%{})
 
-        %{
-          "type" => "object",
-          "properties" => properties,
-          "required" => Enum.map(Map.keys(model), &to_string/1)
-        }
+  #       %{
+  #         "type" => "object",
+  #         "properties" => properties,
+  #         "required" => Enum.map(Map.keys(model), &to_string/1)
+  #       }
 
-      is_list(model) and length(model) > 0 ->
-        # For non-empty lists, use the first item as a template
-        item_schema = convert_to_simple_json_schema(List.first(model))
+  #     is_list(model) and length(model) > 0 ->
+  #       # For non-empty lists, use the first item as a template
+  #       item_schema = convert_to_simple_json_schema(List.first(model))
 
-        %{
-          "type" => "array",
-          "items" => item_schema
-        }
+  #       %{
+  #         "type" => "array",
+  #         "items" => item_schema
+  #       }
 
-      is_list(model) ->
-        # For empty lists, use a generic array
-        %{
-          "type" => "array",
-          "items" => %{"type" => "object"}
-        }
+  #     is_list(model) ->
+  #       # For empty lists, use a generic array
+  #       %{
+  #         "type" => "array",
+  #         "items" => %{"type" => "object"}
+  #       }
 
-      is_binary(model) ->
-        %{"type" => "string"}
+  #     is_binary(model) ->
+  #       %{"type" => "string"}
 
-      is_integer(model) ->
-        %{"type" => "integer"}
+  #     is_integer(model) ->
+  #       %{"type" => "integer"}
 
-      is_float(model) ->
-        %{"type" => "number"}
+  #     is_float(model) ->
+  #       %{"type" => "number"}
 
-      is_boolean(model) ->
-        %{"type" => "boolean"}
+  #     is_boolean(model) ->
+  #       %{"type" => "boolean"}
 
-      is_nil(model) ->
-        %{"type" => "null"}
+  #     is_nil(model) ->
+  #       %{"type" => "null"}
 
-      is_struct(model) ->
-        # For structs, convert to map first
-        model
-        |> Map.from_struct()
-        |> convert_to_simple_json_schema()
+  #     is_struct(model) ->
+  #       # For structs, convert to map first
+  #       model
+  #       |> Map.from_struct()
+  #       |> convert_to_simple_json_schema()
 
-      true ->
-        # Default fallback
-        %{"type" => "string"}
-    end
-  end
+  #     true ->
+  #       # Default fallback
+  #       %{"type" => "string"}
+  #   end
+  # end
 
   def api_keys_present? do
     %{
