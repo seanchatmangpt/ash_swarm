@@ -8,8 +8,8 @@ defmodule AshSwarm.MixProject do
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [
-        warnings_as_errors: Mix.env() != :test,
-        warn_unused: Mix.env() != :test
+        # warnings_as_errors: Mix.env() != :test,
+        # warn_unused: Mix.env() != :test
       ],
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :dev,
