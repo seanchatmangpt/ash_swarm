@@ -9,7 +9,7 @@ defmodule AshSwarm.Accounts.User do
   authentication do
     add_ons do
       log_out_everywhere do
-        apply_on_password_change?(true)
+        apply_on_password_change? true
       end
 
       confirmation :confirm_new_user do

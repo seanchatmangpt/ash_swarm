@@ -47,7 +47,7 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   end
 
   # Helper to check if API keys are available for real tests
-  defp api_keys_available? do
+  def api_keys_available? do
     # Check for GROQ_API_KEY or other necessary keys
     System.get_env("GROQ_API_KEY") != nil
   end
@@ -103,7 +103,7 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   end
 
   # Mock analysis results for testing without API
-  defp mock_analysis_result do
+  def mock_analysis_result do
     %{
       complexity_report: %{
         overall_score: 75,
@@ -144,7 +144,7 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   end
 
   # Mock optimization result for testing without API
-  defp mock_optimization_result do
+  def mock_optimization_result do
     %{
       optimized_code: """
       def frequently_called_function(a, b) do
@@ -167,7 +167,7 @@ defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   end
 
   # Mock evaluation result for testing without API
-  defp mock_evaluation_result do
+  def mock_evaluation_result do
     %{
       evaluation: %{
         success_rating: 90,

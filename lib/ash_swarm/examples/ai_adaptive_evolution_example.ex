@@ -205,7 +205,6 @@ defmodule AshSwarm.Examples.AIAdaptiveEvolutionExample do
 
     case ai_module.analyze_code(module, options) do
       {:ok, result} -> result
-      {:error, error} -> %{error: error}
     end
   end
 
@@ -221,7 +220,6 @@ defmodule AshSwarm.Examples.AIAdaptiveEvolutionExample do
 
     case ai_module.generate_optimized_implementation(original_code, usage_patterns, options) do
       {:ok, result} -> result
-      {:error, error} -> %{error: error}
     end
   end
 
@@ -237,7 +235,6 @@ defmodule AshSwarm.Examples.AIAdaptiveEvolutionExample do
 
     case ai_module.evaluate_experiment(original_code, adapted_code, metrics, options) do
       {:ok, result} -> result
-      {:error, error} -> %{error: error}
     end
   end
 
@@ -249,7 +246,7 @@ defmodule AshSwarm.Examples.AIAdaptiveEvolutionExample do
 
     * `module` - The module to evolve
     * `options` - Workflow options
-    
+
   ## Returns
 
     * Workflow results
