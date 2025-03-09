@@ -1,5 +1,6 @@
 defmodule AshSwarm.Foundations.AIAdaptiveEvolutionExampleTest do
   use ExUnit.Case
+
   require Logger
   import ExUnit.Callbacks, only: [on_exit: 1, setup: 1]
 
