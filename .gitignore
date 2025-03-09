@@ -22,3 +22,20 @@ node_modules
 .DS_Store
 # Ignore Livebook temporary changes
 live_books/*.autosave.livemd
+
+# Ignore local fix and utility scripts
+# These are local helper scripts that shouldn't be committed
+clean_fix.sh
+final_fix.sh
+fix_all_syntax.sh
+fix_function_references.sh
+fix_references.sh
+fix_syntax.sh
+fix_warnings.sh
+start_livebook_without_warnings.sh
+update_function_calls.sh
+fix_unused_functions.sh
+start_livebook_final.sh
+start_livebook_fixed.sh
+fix_instructor_helper.ex
+fix_files.exs

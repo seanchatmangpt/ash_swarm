@@ -95,7 +95,7 @@ jobs:
 
       # Step: Compile the project
       - name: Compile the project
-        run: mix compile
+        run: mix compile --warnings-as-errors
 
       - name: Check for unused deps in `mix.lock`
         run: mix deps.unlock --check-unused

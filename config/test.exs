@@ -38,3 +38,9 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+# Configure AshSwarm to use mock implementations in tests
+config :ash_swarm,
+  ai_code_analysis_module: AshSwarm.MockAICodeAnalysis,
+  ai_adaptation_strategies_module: AshSwarm.MockAIAdaptationStrategies,
+  ai_experiment_evaluation_module: AshSwarm.MockAIExperimentEvaluation
