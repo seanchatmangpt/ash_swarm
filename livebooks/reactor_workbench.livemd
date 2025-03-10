@@ -1,0 +1,762 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Reactors
+
+```elixir
+Mix.install(
+  [
+    {:instructor, github: "thmsmlr/instructor_ex", branch: "main"},
+    {:ash, "~> 3.0"},
+    {:reactor, "~> 0.12.1"},
+    {:ecto, "~> 3.9"},
+    {:jason, "~> 1.4"}
+  ],
+  config: [
+    instructor: [
+      api_url: "https://api.groq.com/openai",
+      api_key: System.get_env("LB_GROQ_API_KEY"), # Replace with your actual API key
+    ]
+  ], 
+  consolidate_protocols: false
+)
+
+Application.put_env(:ash, :validate_domain_resource_inclusion?, false)
+Application.put_env(:ash, :validate_domain_config_inclusion?, false)
+
+# Configure the Groq adapter explicitly as the default adapter
+Application.put_env(:instructor, :adapter, Instructor.Adapters.Groq)
+
+# Add the Groq adapter-specific configuration
+Application.put_env(:instructor, :groq, [
+  api_url: "https://api.groq.com/openai",
+  api_key: System.get_env("LB_GROQ_API_KEY"), # Replace with your actual API key
+  http_options: [receive_timeout: 60_000]
+])
+```
+
+## Section
+
+```elixir
+defmodule InstructorHelper do
+  @moduledoc """
+  A helper module for interacting with Instructor_ex.
+
+  Provides a function `gen/4` which wraps the call to Instructor.chat_completion.
+  """
+
+  @doc """
+  Generates a completion using Instructor.chat_completion.
+
+  ## Parameters
+
+    - `response_model`: The expected structure for the response (either a map or an Ecto embedded schema).
+    - `sys_msg`: The system message providing context to the language model.
+    - `user_msg`: The user prompt.
+    - `model`: (Optional) The model to use. Defaults to `"llama-3.1-8b-instant"`.
+
+  ## Returns
+
+    - `{:ok, result}` on success.
+    - `{:error, reason}` on failure.
+  """
+  def gen(response_model, sys_msg, user_msg, model \\ "llama-3.1-8b-instant") do
+    params = [
+      mode: :tools,
+      model: model,
+      messages: [
+        %{role: "system", content: sys_msg},
+        %{role: "user", content: user_msg}
+      ],
+      response_model: response_model
+    ]
+
+    Instructor.chat_completion(params)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, InstructorHelper, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:gen, 4}}
+```
+
+```elixir
+import InstructorHelper
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+InstructorHelper
+```
+
+```elixir
+defmodule PromptStep do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, _context, _options) do
+    # Retrieve the prompt from the arguments.
+    prompt = arguments[:prompt]
+
+    # Build the parameters for Instructor.chat_completion.
+    # params = [
+      # Use a simple schemaless map as the response model.
+      # response_model: %{output: :string},
+      # messages: [%{role: "user", content: prompt}],
+      # stream: false
+    # ]
+
+    # Call the Instructor.chat_completion function.
+    case gen(%{output: :string}, "You are a assistant", prompt) do
+      {:ok, result} ->
+        IO.inspect(result, label: "PromptStep Result")
+        {:ok, result}
+      error ->
+        error
+    end
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, PromptStep, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:run, 3}}
+```
+
+```elixir
+defmodule ProcessStep do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, context, options) do
+    IO.inspect(arguments)
+    IO.inspect(context)
+    IO.inspect(options)
+    # Extract the output field
+    prompt_result = arguments[:prompt_result]
+
+    # Ensure we are using the actual string, not the whole map
+    text_output = prompt_result[:output]
+
+    IO.inspect(text_output, label: "ProcessStep Input")
+
+    # For demonstration, prefix the extracted text
+    processed = "Processed: #{text_output}"
+
+    {:ok, processed}
+  end
+end
+
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, ProcessStep, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:run, 3}}
+```
+
+```elixir
+defmodule PromptReactor do
+  use Reactor
+
+  # Define an input called :prompt.
+  input :prompt
+
+  # Step :prompt_step uses the prompt input.
+  step :prompt_step, PromptStep do
+    argument :prompt, input(:prompt)
+  end
+
+  # Step :process_step takes the result from :prompt_step.
+  step :process_step, ProcessStep do
+    argument :prompt_result, result(:prompt_step)
+  end
+
+  # The reactor returns the final result from :process_step.
+  return :process_step
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, PromptReactor, <<70, 79, 82, 49, 0, 0, 52, ...>>,
+ %{
+   opts: [],
+   entities: [
+     %Reactor.Dsl.Input{__identifier__: :prompt, description: nil, name: :prompt, ...},
+     %Reactor.Dsl.Step{__identifier__: :prompt_step, arguments: [...], ...},
+     %Reactor.Dsl.Step{__identifier__: :process_step, ...}
+   ]
+ }}
+```
+
+```elixir
+{:ok, final_result} = Reactor.run(PromptReactor, prompt: "You are sending an email from a DLP analyst asking why the user sent a encrypted file to a unknown email address. The email should be 3 paragraphs")
+
+```
+
+```elixir
+ExUnit.start(autorun: false)
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+defmodule Ash.Test.Domain do
+  use Ash.Domain
+
+  resources do
+    resource Ash.Test.Reactor.BulkCreateTest.Post
+  end
+end
+
+
+defmodule Ash.Test.Reactor.BulkCreateTest do
+  @moduledoc false
+  use ExUnit.Case, async: true
+
+  alias Ash.Test.Domain
+
+  defmodule Post do
+    @moduledoc false
+    use Ash.Resource, data_layer: Ash.DataLayer.Ets, domain: Domain
+
+    attributes do
+      uuid_primary_key :id
+      attribute :title, :string, allow_nil?: false, public?: true
+    end
+
+    actions do
+      defaults [:read, create: :*]
+    end
+  end
+
+  defmodule BulkCreateReactor do
+    @moduledoc false
+    use Reactor, extensions: [Ash.Reactor]
+
+    input :post_attrs
+
+    bulk_create :create_posts, Post, :create do
+      initial(input(:post_attrs))
+    end
+  end
+
+  test "it can create a bunch of records all at once" do
+    how_many = :rand.uniform(99) + :rand.uniform(99)
+
+    post_attrs =
+      1..how_many
+      |> Enum.map(&%{title: "Post number #{&1}"})
+
+    assert {:ok, _} =
+             Reactor.run(BulkCreateReactor, %{post_attrs: post_attrs}, %{}, async?: false)
+
+    created_posts = Ash.read!(Post, action: :read)
+
+    assert length(created_posts) == how_many
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Ash.Test.Reactor.BulkCreateTest, <<70, 79, 82, 49, 0, 0, 19, ...>>,
+ {:"test it can create a bunch of records all at once", 1}}
+```
+
+```elixir
+ExUnit.run()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Running ExUnit with seed: 42920, max_cases: 32
+
+
+10:18:14.806 [debug] Creating 100 Ash.Test.Reactor.BulkCreateTest.Post: [#Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "0b23c3c1-8da0-4108-b1f5-768e6feabb7d", title: "Post number 100"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 99}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "c43ad076-eb63-4f3e-8887-8edeff9392b4", title: "Post number 99"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 98}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "6ddbf4b6-9ca7-4603-ae18-40b3c08c6f16", title: "Post number 98"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 97}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "671337d1-1ae4-43eb-93d5-5b8fee509f9f", title: "Post number 97"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 96}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "26f030bb-a0af-4cc0-a576-8409bf02324f", title: "Post number 96"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 95}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "7deb8ae9-547d-4637-a5b3-ded3d0c70279", title: "Post number 95"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 94}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "b6e19411-9d03-4d28-a52e-81e7d40d440b", title: "Post number 94"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 93}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "0d6657d9-74e4-4270-a66e-c1b8fdef29d4", title: "Post number 93"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 92}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "df1019ac-a9db-45c5-a92e-2fd9b83d997e", title: "Post number 92"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 91}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "0c7d05f0-259f-4e59-bc5b-370eb993cc96", title: "Post number 91"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 90}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "b5094e58-82a3-458c-8eb0-b9f740258450", title: "Post number 90"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 89}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "da7f13d3-b43f-426f-b403-d87cd7eb4516", title: "Post number 89"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 88}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "d21117ee-4c81-4e50-94e3-680eab0b4463", title: "Post number 88"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 87}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "00f5d544-74f8-46e6-bf0f-355ba2663239", title: "Post number 87"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 86}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "c04d50a0-368d-42ff-b0a9-ee453b71e70b", title: "Post number 86"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 85}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "58f9d250-643f-4671-a9d1-52046737fe08", title: "Post number 85"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 84}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "87772753-8ffd-4374-9c53-235a1f105d83", title: "Post number 84"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 83}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "f5225612-da26-489f-876e-2ec6fe4c2bf0", title: "Post number 83"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 82}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "e8f7b854-ece7-4aaf-9bbb-bc2b81fe9838", title: "Post number 82"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 81}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "2973b3d0-60c4-482d-91d6-296ecd52c18b", title: "Post number 81"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 80}}, valid?: true>, #Ash.Changeset<domain:  (truncated)
+
+10:18:14.810 [debug] Creating 18 Ash.Test.Reactor.BulkCreateTest.Post: [#Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "6b2f135a-060d-475c-9a23-49efc14d66a6", title: "Post number 118"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 117}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "e52632ec-3255-4b79-acd9-a09e8d037b23", title: "Post number 117"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 116}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "b27945e6-8e87-4a23-b715-3a205c4f6890", title: "Post number 116"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 115}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "acb34425-2779-4ca2-b547-080336d58fdb", title: "Post number 115"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 114}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "8434142e-208f-4942-a007-48c9ec2bee89", title: "Post number 114"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 113}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "6312a86e-8a10-49ae-998f-6baa695cb722", title: "Post number 113"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 112}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "44800de7-84a8-435e-9c8e-bc87d475070d", title: "Post number 112"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 111}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "ca3a5835-63ec-4b09-8caf-79a2088b8cfe", title: "Post number 111"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 110}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "231e3bde-a191-4de7-8544-7765dc1bfb88", title: "Post number 110"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 109}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "1745d7f2-39ca-4d56-97bf-31597e3d1f56", title: "Post number 109"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 108}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "bb799df6-d39f-4995-afa8-07acfdbda5ae", title: "Post number 108"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 107}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "44063c85-84ee-4149-b271-5b49e405085a", title: "Post number 107"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 106}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "1ea973f2-94c4-4c27-9e16-0198a56091f5", title: "Post number 106"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 105}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "0683eb51-e0bc-4993-8694-b6b0ce3937d1", title: "Post number 105"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 104}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "be63bcc5-3d45-4e4d-985c-e4aca3a7667b", title: "Post number 104"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 103}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "a9258bf0-fb9b-4749-af0d-289cdca14553", title: "Post number 103"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 102}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "a2c51686-5432-463a-a41a-7265e0b03a13", title: "Post number 102"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 101}}, valid?: true>, #Ash.Changeset<domain: Ash.Test.Domain, action_type: :create, action: :create, attributes: %{id: "47e29745-5844-45da-984c-27cc15597f9d", title: "Post number 101"}, relationships: %{}, errors: [], data: #Ash.Test.Reactor.BulkCreateTest.Post<__meta__: #Ecto.Schema.Metadata<:built, "">, id: nil, title: nil, aggregates: %{}, calculations: %{}, ...>, context: %{bulk_create: %{index: 100}}, valid?: true>]
+
+
+  1) test it can create a bunch of records all at once (Ash.Test.Reactor.BulkCreateTest)
+     dev/livebooks/llm_reactor.livemd#cell:ijv73lzwdb4mmpnt:41
+     Assertion with == failed
+     code:  assert length(created_posts) == how_many
+     left:  236
+     right: 118
+     stacktrace:
+       dev/livebooks/llm_reactor.livemd#cell:ijv73lzwdb4mmpnt:53: (test)
+
+
+Finished in 0.01 seconds (0.01s async, 0.00s sync)
+1 test, 1 failure
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{total: 1, excluded: 0, skipped: 0, failures: 1}
+```
+
+```elixir
+defmodule Ash.Test.ReactorAshStepTest do
+  @moduledoc false
+  use ExUnit.Case, async: true
+
+  defmodule GenericAshStep do
+    @moduledoc false
+    use Ash.Reactor
+
+  middlewares do
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
+  end
+    
+    input(:title)
+
+    ash_step :generic_ash_step do
+      argument :title, input(:title)
+
+      run fn input, _context ->
+        {:ok, "hello #{input.title}"}
+      end
+    end
+  end
+
+  test "it runs the step" do
+    assert {:ok, "hello world"} = Reactor.run(GenericAshStep, %{title: "world"}, %{verbose: true})
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Ash.Test.ReactorAshStepTest, <<70, 79, 82, 49, 0, 0, 14, ...>>,
+ {:"test it runs the step", 1}}
+```
+
+```elixir
+ExUnit.run()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Running ExUnit with seed: 42920, max_cases: 32
+
+
+10:20:11.212 [info] 🚀 Reactor started execution.
+
+📌 Context:
+%{
+  verbose: true,
+  __reactor__: %{
+    id: Ash.Test.ReactorAshStepTest.GenericAshStep,
+    initial_state: :pending,
+    inputs: [:title],
+    middleware: [AshSwarm.Reactors.Middlewares.DebugMiddleware,
+     Ash.Reactor.Tracer, Ash.Reactor.Notifications],
+    step_count: 1
+  }
+}
+
+
+10:20:11.212 [info] ▶️ Step `generic_ash_step` process started for PID: #PID<0.13822.0>
+
+10:20:11.213 [info] ▶️ Step `generic_ash_step` started with arguments: %{title: "world"}
+
+10:20:11.213 [info] ✅ Step `generic_ash_step` completed successfully with result: hello world
+
+10:20:11.214 [info] 🛑 Step `generic_ash_step` process terminated for PID: #PID<0.13822.0>
+
+📌 Step:
+%Reactor.Step{
+  arguments: [
+    %Reactor.Argument{
+      name: :title,
+      source: %Reactor.Template.Input{name: :title, sub_path: []},
+      transform: nil
+    }
+  ],
+  async?: true,
+  context: %{},
+  description: nil,
+  impl: {Ash.Reactor.AshStep,
+   [
+     run: &Ash.Test.ReactorAshStepTest.GenericAshStep.run_0_generated_EBD92200CE01513DE9618FA626A14968/2,
+     compensate: nil,
+     undo: nil,
+     impl: nil
+   ]},
+  name: :generic_ash_step,
+  max_retries: :infinity,
+  ref: :generic_ash_step,
+  transform: nil,
+  guards: []
+}
+
+🎯 Context:
+%{
+  private: %{
+    inputs: %{title: "world"},
+    composed_reactors: MapSet.new([Ash.Test.ReactorAshStepTest.GenericAshStep])
+  },
+  verbose: true,
+  __reactor__: %{
+    id: Ash.Test.ReactorAshStepTest.GenericAshStep,
+    initial_state: :pending,
+    inputs: [:title],
+    middleware: [AshSwarm.Reactors.Middlewares.DebugMiddleware,
+     Ash.Reactor.Tracer, Ash.Reactor.Notifications],
+    step_count: 1
+  },
+  ash_notification_agent: [#PID<0.13821.0>]
+}
+
+
+10:20:11.215 [debug] ✅ Reactor execution completed successfully.
+.
+Finished in 0.00 seconds (0.00s async, 0.00s sync)
+1 test, 0 failures
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{total: 1, excluded: 0, skipped: 0, failures: 0}
+```
+
+```elixir
+defmodule AshSwarm.Reactors.Middlewares.DebugMiddleware do
+  @moduledoc """
+  A Reactor middleware that logs debug information.
+
+  This middleware logs the start and stop of the Reactor execution, as well as the
+  execution of individual steps, including their inputs, results, errors, and retries.
+
+  Add verbose to the context to log the context and step details.
+  """
+
+  use Reactor.Middleware
+  require Logger
+
+  @doc false
+  @impl true
+  def init(context) do
+    verbose = Map.get(context, :verbose, false)
+
+    log_message =
+      if verbose do
+        """
+        🚀 Reactor started execution.
+
+        📌 Context:
+        #{safe_inspect(context)}
+        """
+      else
+        "🚀 Reactor started execution."
+      end
+
+    Logger.info(log_message)
+    {:ok, context}
+  end
+
+  @doc false
+  @impl true
+  def complete(result, _context) do
+    Logger.debug("✅ Reactor execution completed successfully.")
+    {:ok, result}
+  end
+
+  @doc false
+  @impl true
+  def error(error, _context) do
+    Logger.error("❌ Reactor execution encountered an error: #{safe_inspect(error)}")
+    :ok
+  end
+
+  @doc false
+  @impl true
+  def halt(context) do
+    Logger.warning("⚠️ Reactor execution was halted.")
+    {:ok, context}
+  end
+
+  @doc false
+  @impl true
+  def event({:run_start, arguments}, step, _context) do
+    Logger.info("▶️ Step `#{step.name}` started with arguments: #{safe_inspect(arguments)}")
+  end
+
+  def event({:run_complete, result}, step, _context) do
+    Logger.info("✅ Step `#{step.name}` completed successfully with result: #{safe_inspect(result)}")
+  end
+
+  def event({:run_error, errors}, step, _context) do
+    Logger.error("❌ Step `#{step.name}` encountered an error: #{safe_inspect(errors)}")
+  end
+
+  def event({:run_retry, value}, step, _context) do
+    Logger.warning("🔄 Step `#{step.name}` is retrying with value: #{safe_inspect(value)}")
+  end
+
+  def event({:compensate_start, reason}, step, _context) do
+    Logger.warning("♻️ Step `#{step.name}` is compensating due to: #{safe_inspect(reason)}")
+  end
+
+  def event({:compensate_complete, _result}, step, _context) do
+    Logger.info("🔄 Step `#{step.name}` compensation completed.")
+  end
+
+  def event({:undo_start, _}, step, _context) do
+    Logger.warning("⏪ Step `#{step.name}` undo process started.")
+  end
+
+  def event({:undo_complete, _}, step, _context) do
+    Logger.info("⏩ Step `#{step.name}` undo process completed.")
+  end
+
+  def event({:process_start, pid}, step, _context) do
+    Logger.info("▶️ Step `#{step.name}` process started for PID: #{safe_inspect(pid)}")
+  end
+
+  def event({:process_terminate, pid}, step, context) do
+    verbose = Map.get(context, :verbose, false)
+
+    log_message =
+      if verbose do
+        """
+        🛑 Step `#{step.name}` process terminated for PID: #{safe_inspect(pid)}
+
+        📌 Step:
+        #{safe_inspect(step)}
+
+        🎯 Context:
+        #{safe_inspect(context)}
+        """
+      else
+        "🛑 Step `#{step.name}` process terminated for PID: #{safe_inspect(pid)}"
+      end
+
+    Logger.info(log_message)
+  end
+
+  # Catch-all for unexpected events
+  def event(event, step, _context) do
+    Logger.warning("⚠️ Unexpected event `#{inspect(event)}` for step `#{step.name}`")
+    {:ok, event}
+  end
+
+  defp safe_inspect(value) do
+    case String.Chars.impl_for(value) do
+      nil -> inspect(value, pretty: true)
+      _ -> to_string(value)
+    end
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, AshSwarm.Reactors.Middlewares.DebugMiddleware, <<70, 79, 82, 49, 0, 0, 38, ...>>,
+ {:safe_inspect, 1}}
+```
+
+```elixir
+defmodule MyApp.HaltStep do
+  use Reactor.Step
+
+  @impl true
+  def run(_arguments, _context, _options) do
+    {:halt, :paused}
+  end
+end
+
+defmodule MyApp.HaltReactor do
+  use Reactor
+
+  middlewares do
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
+  end
+
+  step :halt_step, MyApp.HaltStep
+
+  return :halt_step
+end
+
+{:halted, reactor} = Reactor.run(MyApp.HaltReactor, %{})
+
+IO.inspect(reactor, label: "Halted Reactor")
+
+# Resume the Reactor
+result = Reactor.run(reactor)
+IO.inspect(result, label: "Resumed Reactor")
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+10:20:51.850 [info] 🚀 Reactor started execution.
+
+10:20:51.851 [info] ▶️ Step `halt_step` process started for PID: #PID<0.13839.0>
+
+10:20:51.851 [info] ▶️ Step `halt_step` started with arguments: %{}
+
+10:20:51.851 [warning] ⚠️ Unexpected event `{:run_halt, :paused}` for step `halt_step`
+
+10:20:51.851 [info] 🛑 Step `halt_step` process terminated for PID: #PID<0.13839.0>
+
+10:20:51.851 [warning] ⚠️ Reactor execution was halted.
+Halted Reactor: %Reactor{
+  context: %{
+    private: %{inputs: %{}, composed_reactors: MapSet.new([MyApp.HaltReactor])},
+    __reactor__: %{
+      id: MyApp.HaltReactor,
+      initial_state: :pending,
+      inputs: [],
+      middleware: [AshSwarm.Reactors.Middlewares.DebugMiddleware],
+      step_count: 1
+    }
+  },
+  id: MyApp.HaltReactor,
+  inputs: [],
+  intermediate_results: %{halt_step: :paused},
+  middleware: [AshSwarm.Reactors.Middlewares.DebugMiddleware],
+  plan: #Graph<type: directed, vertices: [], edges: []>,
+  return: :halt_step,
+  state: :halted,
+  steps: [],
+  undo: []
+}
+
+10:20:51.852 [info] 🚀 Reactor started execution.
+
+10:20:51.852 [debug] ✅ Reactor execution completed successfully.
+Resumed Reactor: {:ok, :paused}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok, :paused}
+```
+
+```elixir
+defmodule MyApp.GitHub.IssueCreationStep do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, _context, _options) do
+    IO.inspect(arguments)
+    {:ok, :not_implemented}
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, MyApp.GitHub.IssueCreationStep, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:run, 3}}
+```
+
+```elixir
+defmodule MyApp.GitHub.IssueCreatedReactor do
+  use Reactor
+
+  middlewares do
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
+  end
+
+  input :issue_title
+  input :issue_body
+  input :repo_id
+
+  step :create_issue, MyApp.GitHub.IssueCreationStep do
+    argument :issue_title, input(:issue_title)
+    argument :issue_body, input(:issue_body)
+    argument :repo_id, input(:repo_id)
+  end
+
+  return :create_issue
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, MyApp.GitHub.IssueCreatedReactor, <<70, 79, 82, 49, 0, 0, 54, ...>>,
+ %{
+   opts: [],
+   entities: [
+     %Reactor.Dsl.Input{__identifier__: :issue_title, description: nil, name: :issue_title, ...},
+     %Reactor.Dsl.Input{__identifier__: :issue_body, description: nil, ...},
+     %Reactor.Dsl.Input{__identifier__: :repo_id, ...},
+     %Reactor.Dsl.Step{...}
+   ]
+ }}
+```
+
+```elixir
+result = Reactor.run(MyApp.GitHub.IssueCreatedReactor, 
+  %{
+    issue_title: "DebugMiddleware Fix", 
+    issue_body: "Inspect causing errors", 
+    repo_id: "1234"
+  }
+)
+
+IO.inspect(result, label: "Reactor Result")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+10:21:53.100 [info] 🚀 Reactor started execution.
+
+10:21:53.101 [info] ▶️ Step `create_issue` process started for PID: #PID<0.13849.0>
+
+10:21:53.102 [info] ▶️ Step `create_issue` started with arguments: %{
+  issue_title: "DebugMiddleware Fix",
+  issue_body: "Inspect causing errors",
+  repo_id: "1234"
+}
+
+10:21:53.102 [info] ✅ Step `create_issue` completed successfully with result: not_implemented
+
+10:21:53.102 [info] 🛑 Step `create_issue` process terminated for PID: #PID<0.13849.0>
+
+10:21:53.103 [debug] ✅ Reactor execution completed successfully.
+Reactor Result: {:ok, :not_implemented}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok, :not_implemented}
+```
+
+<!-- livebook:{"offset":32857,"stamp":{"token":"XCP.2r0dVjtwHBQvSmPQiS6CwNinVtzcgzIP7IuL_5UL-BH8auyWBXUY6y2l4Wccs8GH7xFBtqMgTkxC73Ke661EW-1M2M8ts3myoZLh-h9JXdLySTR_w2Jz","version":2}} -->

@@ -34,6 +34,9 @@ default_instructor_adapter =
 config :instructor,
   adapter: default_instructor_adapter
 
+config :ash_swarm,
+  github_webhook_secret: "your_secret_here"
+
 config :instructor, :groq,
   api_url: System.get_env("GROQ_API_URL", "https://api.groq.com/openai"),
   api_key: System.get_env("GROQ_API_KEY", "")
@@ -100,6 +103,7 @@ config :ash_swarm,
   ecto_repos: [AshSwarm.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
+    AshSwarm.Issues,
     AshSwarm.Kpis,
     AshSwarm.Accounts,
     AshSwarm.Workflows,
