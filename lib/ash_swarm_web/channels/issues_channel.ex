@@ -1,8 +1,11 @@
 defmodule AshSwarmWeb.IssuesChannel do
   use AshSwarmWeb, :channel
 
+  alias AshSwarm.PubSub
+
   @impl true
   def join("issues:lobby", payload, socket) do
+    PubSub.subscribe("issues:lobby")
     if authorized?(payload) do
       {:ok, socket}
     else

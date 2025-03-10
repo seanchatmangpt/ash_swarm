@@ -5,14 +5,26 @@ defmodule AshSwarmWeb.GitHubWebhookController do
   @github_secret Application.compile_env(:ash_swarm, :github_webhook_secret, "default_secret")
 
   def handle(conn, %{"action" => "opened"} = params) do
-    # Process the "issues opened" event
-    # ...
-    # IO.inspect(conn)
-    # IO.inspect(params)
-    AshSwarmWeb.Endpoint.broadcast("issues:lobby", "issue_opened", params)
+    # Extract relevant issue data from params
+    issue_data = %{
+      issue_title: params["issue"]["title"],
+      issue_body: params["issue"]["body"],
+      repo_id: params["repository"]["full_name"]
+    }
 
+    AshSwarm.PubSub.broadcast("issues", "created", params)
 
-    send_resp(conn, 200, "Issue created event processed")
+    # # Use the reactor to create the issue, which will trigger the notification
+    # case MyApp.GitHub.IssueCreatedReactor.run(issue_data) do
+    #   {:ok, _result} ->
+    #     send_resp(conn, 200, "Issue created event processed")
+
+    #   {:error, error} ->
+    #     Logger.error("Failed to process issue: #{inspect(error)}")
+    #     send_resp(conn, 500, "Failed to process issue")
+    # end
+
+    send_resp(conn, 200, "Issue created")
   end
 
   def handle(conn, params) do
@@ -29,10 +41,23 @@ defmodule AshSwarmWeb.GitHubWebhookController do
       case {event, params["action"]} do
         {"issues", "opened"} ->
           Logger.info("New issue created: #{inspect(params)}")
-          # Process the new issue event here.
-          AshSwarmWeb.Endpoint.broadcast("issues:lobby", "issue_opened", params)
 
-          send_resp(conn, 200, "Issue created event processed")
+          # Extract relevant issue data from params
+          issue_data = %{
+            issue_title: params["issue"]["title"],
+            issue_body: params["issue"]["body"],
+            repo_id: params["repository"]["full_name"]
+          }
+
+          # Use the reactor to create the issue, which will trigger the notification
+          case MyApp.GitHub.IssueCreatedReactor.run(issue_data) do
+            {:ok, _result} ->
+              send_resp(conn, 200, "Issue created event processed")
+
+            {:error, error} ->
+              Logger.error("Failed to process issue: #{inspect(error)}")
+              send_resp(conn, 500, "Failed to process issue")
+          end
 
         _ ->
           Logger.info("Ignoring event: #{event} with action #{params["action"]}")

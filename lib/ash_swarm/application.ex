@@ -26,6 +26,7 @@ defmodule AshSwarm.Application do
       # {AshSwarm.Worker, arg},
       # Start to serve requests, typically the last entry
       AshSwarmWeb.Endpoint,
+      {AshSwarm.RepoListener, name: AshSwarm.RepoListener},
       {AshAuthentication.Supervisor, [otp_app: :ash_swarm]}
     ]
 

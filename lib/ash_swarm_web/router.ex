@@ -102,6 +102,8 @@ defmodule AshSwarmWeb.Router do
 
     live "/kpis/:id", KpiLive.Show, :show
     live "/kpis/:id/show/edit", KpiLive.Show, :edit
+
+    live "/issues", IssuesLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

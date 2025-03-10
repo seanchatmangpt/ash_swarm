@@ -60,6 +60,8 @@ config :ash,
   default_page_type: :keyset,
   policies: [no_filter_static_forbidden_reads?: false]
 
+config :ash, :pub_sub, debug?: true
+
 config :spark,
   formatter: [
     remove_parens?: true,

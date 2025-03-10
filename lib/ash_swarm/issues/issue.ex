@@ -2,7 +2,17 @@ defmodule AshSwarm.Issues.Issue do
   use Ash.Resource,
     otp_app: :ash_swarm,
     domain: AshSwarm.Issues,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    notifiers: [Ash.Notifier.PubSub]
+
+  pub_sub do
+    module AshSwarm.PubSub
+
+    prefix "issues"
+    publish :create, ["created"]
+    publish :update, ["updated"]
+    publish :destroy, ["deleted"]
+  end
 
   postgres do
     table "issues"
