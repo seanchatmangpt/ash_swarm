@@ -22,6 +22,12 @@ defmodule AshSwarmWeb.Router do
     plug :set_actor, :user
   end
 
+  scope "/webhooks", AshSwarmWeb do
+    pipe_through :api
+
+    post "/github", GitHubWebhookController, :handle
+  end
+
   scope "/", AshSwarmWeb do
     pipe_through :browser
 
