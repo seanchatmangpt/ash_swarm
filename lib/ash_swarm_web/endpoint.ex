@@ -44,6 +44,7 @@ defmodule AshSwarmWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json, AshJsonApi.Plug.Parser],
     pass: ["*/*"],
+    body_reader: {AshSwarmWeb.CacheBodyReader, :read_body, []},
     json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride

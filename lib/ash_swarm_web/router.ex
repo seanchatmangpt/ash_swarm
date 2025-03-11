@@ -22,6 +22,12 @@ defmodule AshSwarmWeb.Router do
     plug :set_actor, :user
   end
 
+  scope "/webhooks", AshSwarmWeb do
+    pipe_through :api
+
+    post "/github", GitHubWebhookController, :handle
+  end
+
   scope "/", AshSwarmWeb do
     pipe_through :browser
 
@@ -96,6 +102,8 @@ defmodule AshSwarmWeb.Router do
 
     live "/kpis/:id", KpiLive.Show, :show
     live "/kpis/:id/show/edit", KpiLive.Show, :edit
+
+    live "/issues", IssuesLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

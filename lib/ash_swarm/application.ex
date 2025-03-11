@@ -22,10 +22,10 @@ defmodule AshSwarm.Application do
       # Start adaptive code evolution services
       AshSwarm.Foundations.UsageStats,
       AshSwarm.Foundations.AdaptiveScheduler,
-      # Start a worker by calling: AshSwarm.Worker.start_link(arg)
-      # {AshSwarm.Worker, arg},
       # Start to serve requests, typically the last entry
       AshSwarmWeb.Endpoint,
+      # Start the RepoListener
+      {AshSwarm.RepoListener, []},
       {AshAuthentication.Supervisor, [otp_app: :ash_swarm]}
     ]
 

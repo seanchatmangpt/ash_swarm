@@ -83,3 +83,6 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# For development, we can bypass webhook signature verification
+config :ash_swarm, :bypass_webhook_verification, true
