@@ -1,0 +1,848 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Chat Reactors
+
+```elixir
+Mix.install(
+  [
+    {:instructor, github: "thmsmlr/instructor_ex", branch: "main"},
+    {:ash, "~> 3.0"},
+    {:reactor, "~> 0.12.1"},
+    {:ecto, "~> 3.9"},
+    {:jason, "~> 1.4"}
+  ],
+  config: [
+    instructor: [
+      api_url: "https://api.groq.com/openai",
+      api_key: System.get_env("LB_GROQ_API_KEY"), # Replace with your actual API key
+    ]
+  ], 
+  consolidate_protocols: false
+)
+
+Application.put_env(:ash, :validate_domain_resource_inclusion?, false)
+Application.put_env(:ash, :validate_domain_config_inclusion?, false)
+
+# Configure the Groq adapter explicitly as the default adapter
+Application.put_env(:instructor, :adapter, Instructor.Adapters.Groq)
+
+# Add the Groq adapter-specific configuration
+Application.put_env(:instructor, :groq, [
+  api_url: "https://api.groq.com/openai",
+  api_key: System.get_env("LB_GROQ_API_KEY"), # Replace with your actual API key
+  http_options: [receive_timeout: 60_000]
+])
+
+System.get_env("LB_GROQ_API_KEY")
+```
+
+## Section
+
+```elixir
+defmodule InstructorHelper do
+  @moduledoc """
+  A helper module for interacting with Instructor_ex.
+
+  Provides a function `gen/4` which wraps the call to Instructor.chat_completion.
+  """
+
+  @doc """
+  Generates a completion using Instructor.chat_completion.
+
+  ## Parameters
+
+    - `response_model`: The expected structure for the response (either a map or an Ecto embedded schema).
+    - `sys_msg`: The system message providing context to the language model.
+    - `user_msg`: The user prompt.
+    - `model`: (Optional) The model to use. Defaults to `"llama-3.1-8b-instant"`.
+
+  ## Returns
+
+    - `{:ok, result}` on success.
+    - `{:error, reason}` on failure.
+  """
+  def gen(response_model, sys_msg, user_msg, model \\ "llama-3.1-8b-instant") do
+    params = [
+      mode: :tools,
+      model: model,
+      messages: [
+        %{role: "system", content: sys_msg},
+        %{role: "user", content: user_msg}
+      ],
+      response_model: response_model
+    ]
+
+    Instructor.chat_completion(params)
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, InstructorHelper, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:gen, 4}}
+```
+
+```elixir
+import InstructorHelper
+
+gen(%{question: :string}, "You are an assistant", "What time is it?")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:error,
+ "LLM Adapter Error: \"Unexpected HTTP response code: 401\\n%{\\\"error\\\" => %{\\\"code\\\" => \\\"invalid_api_key\\\", \\\"message\\\" => \\\"Invalid API Key\\\", \\\"type\\\" => \\\"invalid_request_error\\\"}}\""}
+```
+
+```elixir
+defmodule PromptStep do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, _context, _options) do
+    # Retrieve the prompt from the arguments.
+    prompt = arguments[:prompt]
+
+    # Build the parameters for Instructor.chat_completion.
+    # params = [
+      # Use a simple schemaless map as the response model.
+      # response_model: %{output: :string},
+      # messages: [%{role: "user", content: prompt}],
+      # stream: false
+    # ]
+
+    # Call the Instructor.chat_completion function.
+    case gen(%{output: :string}, "You are a assistant", prompt) do
+      {:ok, result} ->
+        IO.inspect(result, label: "PromptStep Result")
+        {:ok, result}
+      error ->
+        error
+    end
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, PromptStep, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:run, 3}}
+```
+
+```elixir
+defmodule ProcessStep do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, context, options) do
+    IO.inspect(arguments)
+    IO.inspect(context)
+    IO.inspect(options)
+    # Extract the output field
+    prompt_result = arguments[:prompt_result]
+
+    # Ensure we are using the actual string, not the whole map
+    text_output = prompt_result[:output]
+
+    IO.inspect(text_output, label: "ProcessStep Input")
+
+    # For demonstration, prefix the extracted text
+    processed = "Processed: #{text_output}"
+
+    {:ok, processed}
+  end
+end
+
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, ProcessStep, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:run, 3}}
+```
+
+```elixir
+defmodule PromptReactor do
+  use Reactor
+
+  # Define an input called :prompt.
+  input :prompt
+
+  # Step :prompt_step uses the prompt input.
+  step :prompt_step, PromptStep do
+    argument :prompt, input(:prompt)
+  end
+
+  # Step :process_step takes the result from :prompt_step.
+  step :process_step, ProcessStep do
+    argument :prompt_result, result(:prompt_step)
+  end
+
+  # The reactor returns the final result from :process_step.
+  return :process_step
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, PromptReactor, <<70, 79, 82, 49, 0, 0, 52, ...>>,
+ %{
+   opts: [],
+   entities: [
+     %Reactor.Dsl.Input{__identifier__: :prompt, description: nil, name: :prompt, ...},
+     %Reactor.Dsl.Step{__identifier__: :prompt_step, arguments: [...], ...},
+     %Reactor.Dsl.Step{__identifier__: :process_step, ...}
+   ]
+ }}
+```
+
+```elixir
+{:ok, final_result} = Reactor.run(PromptReactor, prompt: "You are sending an email from a DLP analyst asking why the user sent a encrypted file to a unknown email address. The email should be 3 paragraphs")
+
+```
+
+```elixir
+ExUnit.start(autorun: false)
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+```elixir
+defmodule Ash.Test.Domain do
+  use Ash.Domain
+
+  resources do
+    resource Ash.Test.Reactor.BulkCreateTest.Post
+  end
+end
+
+
+defmodule Ash.Test.Reactor.BulkCreateTest do
+  @moduledoc false
+  use ExUnit.Case, async: true
+
+  alias Ash.Test.Domain
+
+  defmodule Post do
+    @moduledoc false
+    use Ash.Resource, data_layer: Ash.DataLayer.Ets, domain: Domain
+
+    attributes do
+      uuid_primary_key :id
+      attribute :title, :string, allow_nil?: false, public?: true
+    end
+
+    actions do
+      defaults [:read, create: :*]
+    end
+  end
+
+  defmodule BulkCreateReactor do
+    @moduledoc false
+    use Reactor, extensions: [Ash.Reactor]
+
+    input :post_attrs
+
+    bulk_create :create_posts, Post, :create do
+      initial(input(:post_attrs))
+    end
+  end
+
+  test "it can create a bunch of records all at once" do
+    how_many = :rand.uniform(99) + :rand.uniform(99)
+
+    post_attrs =
+      1..how_many
+      |> Enum.map(&%{title: "Post number #{&1}"})
+
+    assert {:ok, _} =
+             Reactor.run(BulkCreateReactor, %{post_attrs: post_attrs}, %{}, async?: false)
+
+    created_posts = Ash.read!(Post, action: :read)
+
+    assert length(created_posts) == how_many
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Ash.Test.Reactor.BulkCreateTest, <<70, 79, 82, 49, 0, 0, 19, ...>>,
+ {:"test it can create a bunch of records all at once", 1}}
+```
+
+```elixir
+ExUnit.run()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Running ExUnit with seed: 593612, max_cases: 32
+
+
+
+  1) test it can create a bunch of records all at once (Ash.Test.Reactor.BulkCreateTest)
+     dev/livebooks/llm_reactor.livemd#cell:spkqxdbmpes3pias:41
+     Assertion with == failed
+     code:  assert length(created_posts) == how_many
+     left:  280
+     right: 140
+     stacktrace:
+       dev/livebooks/llm_reactor.livemd#cell:spkqxdbmpes3pias:53: (test)
+
+
+Finished in 0.00 seconds (0.00s async, 0.00s sync)
+1 test, 1 failure
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{total: 1, skipped: 0, failures: 1, excluded: 0}
+```
+
+```elixir
+defmodule Ash.Test.ReactorAshStepTest do
+  @moduledoc false
+  use ExUnit.Case, async: true
+
+  defmodule GenericAshStep do
+    @moduledoc false
+    use Ash.Reactor
+
+  middlewares do
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
+  end
+    
+    input(:title)
+
+    ash_step :generic_ash_step do
+      argument :title, input(:title)
+
+      run fn input, _context ->
+        {:ok, "hello #{input.title}"}
+      end
+    end
+  end
+
+  test "it runs the step" do
+    assert {:ok, "hello world"} = Reactor.run(GenericAshStep, %{title: "world"}, %{verbose: true})
+  end
+end
+```
+
+```elixir
+ExUnit.run()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Running ExUnit with seed: 593612, max_cases: 32
+
+
+Finished in 0.00 seconds (0.00s async, 0.00s sync)
+0 failures
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%{total: 0, skipped: 0, failures: 0, excluded: 0}
+```
+
+```elixir
+defmodule AshSwarm.Reactors.Middlewares.DebugMiddleware do
+  @moduledoc """
+  A Reactor middleware that logs debug information.
+
+  This middleware logs the start and stop of the Reactor execution, as well as the
+  execution of individual steps, including their inputs, results, errors, and retries.
+
+  Add verbose to the context to log the context and step details.
+  """
+
+  use Reactor.Middleware
+  require Logger
+
+  @doc false
+  @impl true
+  def init(context) do
+    verbose = Map.get(context, :verbose, false)
+
+    log_message =
+      if verbose do
+        """
+        🚀 Reactor started execution.
+
+        📌 Context:
+        #{safe_inspect(context)}
+        """
+      else
+        "🚀 Reactor started execution."
+      end
+
+    Logger.info(log_message)
+    {:ok, context}
+  end
+
+  @doc false
+  @impl true
+  def complete(result, _context) do
+    Logger.debug("✅ Reactor execution completed successfully.")
+    {:ok, result}
+  end
+
+  @doc false
+  @impl true
+  def error(error, _context) do
+    Logger.error("❌ Reactor execution encountered an error: #{safe_inspect(error)}")
+    :ok
+  end
+
+  @doc false
+  @impl true
+  def halt(context) do
+    Logger.warning("⚠️ Reactor execution was halted.")
+    {:ok, context}
+  end
+
+  @doc false
+  @impl true
+  def event({:run_start, arguments}, step, _context) do
+    Logger.info("▶️ Step `#{step.name}` started with arguments: #{safe_inspect(arguments)}")
+  end
+
+  def event({:run_complete, result}, step, _context) do
+    Logger.info("✅ Step `#{step.name}` completed successfully with result: #{safe_inspect(result)}")
+  end
+
+  def event({:run_error, errors}, step, _context) do
+    Logger.error("❌ Step `#{step.name}` encountered an error: #{safe_inspect(errors)}")
+  end
+
+  def event({:run_retry, value}, step, _context) do
+    Logger.warning("🔄 Step `#{step.name}` is retrying with value: #{safe_inspect(value)}")
+  end
+
+  def event({:compensate_start, reason}, step, _context) do
+    Logger.warning("♻️ Step `#{step.name}` is compensating due to: #{safe_inspect(reason)}")
+  end
+
+  def event({:compensate_complete, _result}, step, _context) do
+    Logger.info("🔄 Step `#{step.name}` compensation completed.")
+  end
+
+  def event({:undo_start, _}, step, _context) do
+    Logger.warning("⏪ Step `#{step.name}` undo process started.")
+  end
+
+  def event({:undo_complete, _}, step, _context) do
+    Logger.info("⏩ Step `#{step.name}` undo process completed.")
+  end
+
+  def event({:process_start, pid}, step, _context) do
+    Logger.info("▶️ Step `#{step.name}` process started for PID: #{safe_inspect(pid)}")
+  end
+
+  def event({:process_terminate, pid}, step, context) do
+    verbose = Map.get(context, :verbose, false)
+
+    log_message =
+      if verbose do
+        """
+        🛑 Step `#{step.name}` process terminated for PID: #{safe_inspect(pid)}
+
+        📌 Step:
+        #{safe_inspect(step)}
+
+        🎯 Context:
+        #{safe_inspect(context)}
+        """
+      else
+        "🛑 Step `#{step.name}` process terminated for PID: #{safe_inspect(pid)}"
+      end
+
+    Logger.info(log_message)
+  end
+
+  # Catch-all for unexpected events
+  def event(event, step, _context) do
+    Logger.warning("⚠️ Unexpected event `#{inspect(event)}` for step `#{step.name}`")
+    {:ok, event}
+  end
+
+  defp safe_inspect(value) do
+    case String.Chars.impl_for(value) do
+      nil -> inspect(value, pretty: true)
+      _ -> to_string(value)
+    end
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, AshSwarm.Reactors.Middlewares.DebugMiddleware, <<70, 79, 82, 49, 0, 0, 38, ...>>,
+ {:safe_inspect, 1}}
+```
+
+```elixir
+defmodule MyApp.HaltStep do
+  use Reactor.Step
+
+  @impl true
+  def run(_arguments, _context, _options) do
+    {:halt, :paused}
+  end
+end
+
+defmodule MyApp.HaltReactor do
+  use Reactor
+
+  middlewares do
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
+  end
+
+  step :halt_step, MyApp.HaltStep
+
+  return :halt_step
+end
+
+{:halted, reactor} = Reactor.run(MyApp.HaltReactor, %{})
+
+IO.inspect(reactor, label: "Halted Reactor")
+
+# Resume the Reactor
+result = Reactor.run(reactor)
+IO.inspect(result, label: "Resumed Reactor")
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Halted Reactor: %Reactor{
+  context: %{
+    private: %{inputs: %{}, composed_reactors: MapSet.new([MyApp.HaltReactor])},
+    __reactor__: %{
+      id: MyApp.HaltReactor,
+      initial_state: :pending,
+      inputs: [],
+      middleware: [AshSwarm.Reactors.Middlewares.DebugMiddleware],
+      step_count: 1
+    }
+  },
+  id: MyApp.HaltReactor,
+  inputs: [],
+  intermediate_results: %{halt_step: :paused},
+  middleware: [AshSwarm.Reactors.Middlewares.DebugMiddleware],
+  plan: #Graph<type: directed, vertices: [], edges: []>,
+  return: :halt_step,
+  state: :halted,
+  steps: [],
+  undo: []
+}
+Resumed Reactor: {:ok, :paused}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok, :paused}
+```
+
+```elixir
+defmodule MyApp.GitHub.IssueCreationStep do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, _context, _options) do
+    IO.inspect(arguments)
+    {:ok, :not_implemented}
+  end
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, MyApp.GitHub.IssueCreationStep, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:run, 3}}
+```
+
+```elixir
+defmodule MyApp.GitHub.IssueCreatedReactor do
+  use Reactor
+
+  middlewares do
+    middleware AshSwarm.Reactors.Middlewares.DebugMiddleware
+  end
+
+  input :issue_title
+  input :issue_body
+  input :repo_id
+
+  step :create_issue, MyApp.GitHub.IssueCreationStep do
+    argument :issue_title, input(:issue_title)
+    argument :issue_body, input(:issue_body)
+    argument :repo_id, input(:repo_id)
+  end
+
+  return :create_issue
+end
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, MyApp.GitHub.IssueCreatedReactor, <<70, 79, 82, 49, 0, 0, 53, ...>>,
+ %{
+   opts: [],
+   entities: [
+     %Reactor.Dsl.Input{__identifier__: :issue_title, description: nil, name: :issue_title, ...},
+     %Reactor.Dsl.Input{__identifier__: :issue_body, description: nil, ...},
+     %Reactor.Dsl.Input{__identifier__: :repo_id, ...},
+     %Reactor.Dsl.Step{...}
+   ]
+ }}
+```
+
+```elixir
+result = Reactor.run(MyApp.GitHub.IssueCreatedReactor, 
+  %{
+    issue_title: "DebugMiddleware Fix", 
+    issue_body: "Inspect causing errors", 
+    repo_id: "1234"
+  }
+)
+
+IO.inspect(result, label: "Reactor Result")
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Reactor Result: {:ok, :not_implemented}
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:ok, :not_implemented}
+```
+
+```elixir
+defmodule Chatbot.Conversation.Message do
+  use Ash.Resource,
+    domain: Chatbot.Conversation,
+    data_layer: Ash.DataLayer.Ets
+
+  attributes do
+    uuid_primary_key :id
+
+    # attribute :session_id, :uuid, allow_nil?: false, public?: true
+    attribute :sender, :string, allow_nil?: false, public?: true
+    attribute :content, :string, allow_nil?: false, public?: true
+    attribute :step, :integer, default: 0, public?: true
+
+    create_timestamp :created_at
+  end
+
+  actions do
+    defaults [:read]
+
+    create :create do
+      accept :*
+    end
+
+    update :update do
+      accept :*
+    end
+  end
+
+  relationships do
+    belongs_to :session, Chatbot.Conversation.Session do
+      attribute_public? true
+    end
+  end
+end
+
+defmodule Chatbot.Conversation.Session do
+  use Ash.Resource,
+    domain: Chatbot.Conversation,
+    data_layer: Ash.DataLayer.Ets
+
+  attributes do
+    uuid_primary_key :id
+
+    attribute :user_id, :string, allow_nil?: false, public?: true
+    attribute :current_step, :integer, default: 0, public?: true
+
+    create_timestamp :created_at
+    update_timestamp :updated_at
+  end
+
+  actions do
+    defaults [:read]
+
+    create :create do
+      accept :*
+    end
+
+    update :update do
+      accept :*
+    end
+
+    destroy :destroy do
+
+    end
+  end
+
+  relationships do
+    has_many :messages, Chatbot.Conversation.Message
+  end
+end
+
+
+
+defmodule Chatbot.Conversation do
+  use Ash.Domain
+
+  resources do
+    resource Chatbot.Conversation.Message
+    resource Chatbot.Conversation.Session
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Chatbot.Conversation, <<70, 79, 82, 49, 0, 0, 45, ...>>,
+ [
+   Ash.Domain.Dsl.Resources.Resource,
+   Ash.Domain.Dsl.Resources.Options,
+   %{opts: [], entities: [%Ash.Domain.Dsl.ResourceReference{...}, ...]}
+ ]}
+```
+
+```elixir
+Chatbot.Conversation.Session
+|> Ash.read!()
+|> Ash.bulk_destroy!(:destroy, %{})
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+%Ash.BulkResult{status: :success, errors: nil, records: nil, notifications: [], error_count: 0}
+```
+
+```elixir
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+nil
+```
+
+```elixir
+Chatbot.Conversation.Session
+|> Ash.Changeset.for_create(:create, %{user_id: "user_123"})
+|> Ash.create!()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Chatbot.Conversation.Session<
+  messages: #Ash.NotLoaded<:relationship, field: :messages>,
+  __meta__: #Ecto.Schema.Metadata<:loaded>,
+  id: "75f9ad93-f443-460c-9fbe-e2437ec233f9",
+  user_id: "user_123",
+  current_step: 0,
+  created_at: ~U[2025-03-11 18:01:47.407400Z],
+  updated_at: ~U[2025-03-11 18:01:47.407400Z],
+  aggregates: %{},
+  calculations: %{},
+  ...
+>
+```
+
+```elixir
+session = Chatbot.Conversation.Session |> Ash.read_one!()
+
+Chatbot.Conversation.Message
+|> Ash.Changeset.for_create(:create, %{
+  session_id: session.id,
+  sender: "user",
+  content: "Hello!",
+  step: session.current_step
+})
+|> Ash.create!()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Chatbot.Conversation.Message<
+  session: #Ash.NotLoaded<:relationship, field: :session>,
+  __meta__: #Ecto.Schema.Metadata<:loaded>,
+  id: "89cb1389-a527-4574-b6a8-eaf292818c9f",
+  sender: "user",
+  content: "Hello!",
+  step: 0,
+  created_at: ~U[2025-03-11 18:01:52.841728Z],
+  session_id: "75f9ad93-f443-460c-9fbe-e2437ec233f9",
+  aggregates: %{},
+  calculations: %{},
+  ...
+>
+```
+
+```elixir
+session = Chatbot.Conversation.Session |> Ash.read_one!()
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+#Chatbot.Conversation.Session<
+  messages: #Ash.NotLoaded<:relationship, field: :messages>,
+  __meta__: #Ecto.Schema.Metadata<:loaded>,
+  id: "75f9ad93-f443-460c-9fbe-e2437ec233f9",
+  user_id: "user_123",
+  current_step: 0,
+  created_at: ~U[2025-03-11 18:01:47.407400Z],
+  updated_at: ~U[2025-03-11 18:01:47.407400Z],
+  aggregates: %{},
+  calculations: %{},
+  ...
+>
+```
+
+<!-- livebook:{"offset":18401,"stamp":{"token":"XCP.BRkFjPeNLabI7NWRQSexhyvYUfUDFttTfXVTx4y3eJhZLNJRzL4sO5PYDyyZHFb_9KndU4W6mRmc3_dc8GOdMfZMj6KPZOQ95yUaEioI_6NL-y4Krbgr","version":2}} -->
