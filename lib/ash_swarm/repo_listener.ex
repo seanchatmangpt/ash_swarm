@@ -20,6 +20,7 @@ defmodule AshSwarm.RepoListener do
 
     What do we need to do to implement this issue?
     """
+
     Reactor.run(AshSwarm.Reactors.QASaga, %{question: question})
     {:noreply, state}
   end

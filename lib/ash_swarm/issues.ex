@@ -3,6 +3,8 @@ defmodule AshSwarm.Issues do
     otp_app: :ash_swarm
 
   resources do
-    resource AshSwarm.Issues.Issue
+    resource AshSwarm.Issues.Issue do
+
+    end
   end
 end

@@ -6,6 +6,7 @@ defmodule AshSwarmWeb.IssuesChannel do
   @impl true
   def join("issues:lobby", payload, socket) do
     PubSub.subscribe("issues:lobby")
+
     if authorized?(payload) do
       {:ok, socket}
     else

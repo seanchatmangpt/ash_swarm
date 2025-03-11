@@ -10,9 +10,7 @@ defmodule AshSwarm.BitHubFixtures do
   def issues_fixture(attrs \\ %{}) do
     {:ok, issues} =
       attrs
-      |> Enum.into(%{
-
-      })
+      |> Enum.into(%{})
       |> AshSwarm.BitHub.create_issues()
 
     issues

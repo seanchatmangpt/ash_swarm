@@ -6,11 +6,11 @@ defmodule AshSwarmWeb.GitHubWebhookController do
 
   def handle(conn, %{"action" => "opened"} = params) do
     # Extract relevant issue data from params
-    issue_data = %{
-      issue_title: params["issue"]["title"],
-      issue_body: params["issue"]["body"],
-      repo_id: params["repository"]["full_name"]
-    }
+    # issue_data = %{
+    #   issue_title: params["issue"]["title"],
+    #   issue_body: params["issue"]["body"],
+    #   repo_id: params["repository"]["full_name"]
+    # }
 
     AshSwarm.PubSub.broadcast("issues", "created", params)
 
