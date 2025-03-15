@@ -13,6 +13,12 @@ defmodule AshSwarmWeb.KpiLive.Index do
       </:actions>
     </.header>
 
+    <.Counter count={@count} name={@name} v-socket={@socket} v-on:inc={JS.push("inc")} />
+
+    <.Checkbox v-socket={@socket} v-on:toggle={JS.push("toggle")} />
+
+    <.Combobox v-socket={@socket} v-on:select={JS.push("select")} />
+
     <.table
       id="kpis"
       rows={@streams.kpis}
@@ -60,13 +66,18 @@ defmodule AshSwarmWeb.KpiLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> stream(:kpis, Ash.read!(AshSwarm.Kpis.Kpi, actor: socket.assigns[:current_user]))
-     |> assign_new(:current_user, fn -> nil end)}
+    socket =
+      socket
+      |> assign_new(:current_user, fn -> nil end)
+      |> stream(:kpis, Ash.read!(AshSwarm.Kpis.Kpi, actor: socket.assigns[:current_user]))
+      |> assign(:count, 0)
+      |> assign(:name, "Hello World")
+
+    {:ok, socket}
   end
 
   @impl true
+  @spec handle_params(any(), any(), map()) :: {:noreply, map()}
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
@@ -100,5 +111,11 @@ defmodule AshSwarmWeb.KpiLive.Index do
     Ash.destroy!(kpi, actor: socket.assigns.current_user)
 
     {:noreply, stream_delete(socket, :kpis, kpi)}
+  end
+
+  @impl true
+  def handle_event("inc", %{"value" => diff}, socket) do
+    IO.puts("Incrementing count by #{diff}")
+    {:noreply, update(socket, :count, &(&1 + diff))}
   end
 end

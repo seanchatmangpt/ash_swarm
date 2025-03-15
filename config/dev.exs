@@ -1,5 +1,11 @@
 import Config
 
+config :live_vue,
+  vite_host: "http://localhost:5173",
+  ssr_module: LiveVue.SSR.ViteJS,
+  # if you want to disable SSR by default, make it false
+  ssr: false
+
 # Configure your database
 config :ash_swarm, AshSwarm.Repo,
   username: "postgres",
@@ -18,15 +24,26 @@ config :ash_swarm, AshSwarm.Repo,
 # to bundle .js and .css sources.
 # Binding to loopback ipv4 address prevents access from other machines.
 config :ash_swarm, AshSwarmWeb.Endpoint,
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {0, 0, 0, 0}, port: 4000],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "pIB4LurND0KggZwPzX+Qkv3AClyzT0/REp+DPayrqtjTOXlWZjX6yW+wDXpXo1L9",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:ash_swarm, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:ash_swarm, ~w(--watch)]}
+    npm: ["--silent", "run", "dev", cd: Path.expand("../assets", __DIR__)]
+  ],
+  live_reload: [
+    notify: [
+      live_view: [
+        ~r"lib/ash_swarm_web/core_components.ex$",
+        ~r"lib/ash_swarm_web/(live|components)/.*(ex|heex)$"
+      ]
+    ],
+    patterns: [
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"priv/gettext/.*(po)$",
+      ~r"lib/ash_swarm_web/(controllers|live|components)/.*(ex|heex)$"
+    ]
   ]
 
 # ## SSL Support
