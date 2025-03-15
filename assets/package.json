@@ -1,0 +1,31 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host -l warn",
+    "build": "vue-tsc && vite build",
+    "build-server": "vue-tsc && vite build --ssr js/server.js --out-dir ../priv/vue --minify esbuild --ssrManifest && echo '{\"type\": \"module\" } ' > ../priv/vue/package.json"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2",
+    "unplugin-vue-components": "^28.4.1",
+    "vite": "^6.2.2",
+    "vue-tsc": "^2.2.8"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^3.0.0",
+    "@radix-ui/colors": "^3.0.0",
+    "live_vue": "file:../deps/live_vue",
+    "phoenix": "file:../deps/phoenix",
+    "phoenix_html": "file:../deps/phoenix_html",
+    "phoenix_live_view": "file:../deps/phoenix_live_view",
+    "reka-ui": "^2.0.2",
+    "topbar": "^2.0.2",
+    "vue": "^3.5.13"
+  }
+}

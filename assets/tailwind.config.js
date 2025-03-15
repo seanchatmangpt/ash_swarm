@@ -4,18 +4,25 @@
 const plugin = require("tailwindcss/plugin")
 const fs = require("fs")
 const path = require("path")
+const { blackA, green, grass, mauve } = require('@radix-ui/colors')
 
 module.exports = {
   content: [
     "../deps/ash_authentication_phoenix/**/*.*ex",
     "./js/**/*.js",
     "../lib/ash_swarm_web.ex",
-    "../lib/ash_swarm_web/**/*.*ex"
+    "../lib/ash_swarm_web/**/*.*ex",
+    "./vue/**/*.vue",
+    "../lib/**/*.vue",
   ],
   theme: {
     extend: {
       colors: {
         brand: "#FD4F00",
+        ...blackA,
+        ...mauve,
+        ...grass,
+        ...green,
       }
     },
   },

@@ -5,7 +5,7 @@ defmodule AshSwarm.MixProject do
     [
       app: :ash_swarm,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [
         warnings_as_errors: true,
@@ -37,6 +37,7 @@ defmodule AshSwarm.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:live_vue, "~> 0.5"},
       {:bcrypt_elixir, "~> 3.0"},
       {:picosat_elixir, "~> 0.2"},
       {:ash_authentication_phoenix, "~> 2.0"},
@@ -60,8 +61,8 @@ defmodule AshSwarm.MixProject do
       {:phoenix_live_view, "~> 1.0.0"},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      # {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      # {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.1.1",
@@ -101,11 +102,14 @@ defmodule AshSwarm.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind ash_swarm", "esbuild ash_swarm"],
+      "assets.setup": ["cmd --cd assets npm install"],
+      "assets.build": [
+        "cmd --cd assets npm run build",
+        "cmd --cd assets npm run build-server"
+      ],
       "assets.deploy": [
-        "tailwind ash_swarm --minify",
-        "esbuild ash_swarm --minify",
+        "cmd --cd assets npm run build",
+        "cmd --cd assets npm run build-server",
         "phx.digest"
       ],
       "phx.routes": ["phx.routes", "ash_json_api.routes", "ash_authentication.phoenix.routes"]

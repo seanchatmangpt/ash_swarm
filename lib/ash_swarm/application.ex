@@ -26,7 +26,8 @@ defmodule AshSwarm.Application do
       # {AshSwarm.Worker, arg},
       # Start to serve requests, typically the last entry
       AshSwarmWeb.Endpoint,
-      {AshAuthentication.Supervisor, [otp_app: :ash_swarm]}
+      {AshAuthentication.Supervisor, [otp_app: :ash_swarm]},
+      {NodeJS.Supervisor, [path: LiveVue.SSR.NodeJS.server_path(), pool_size: 4]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
